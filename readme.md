@@ -10,11 +10,13 @@ here is how it looks currently
 
 ## why
 
-first of all i'm a very openionated person, that's one of the reasons i love open-source. if something is itching, then you can go break some stuff. when i'm trying the mms simulator (which is awesome and props to make for providing executables for all platforms, god what a legend), i wanted to make some changes to make the user experience a bit better and adding additional sim capabilities. then i found out he used qt for the gui. so... (long pause and a deep sigh). i went through the internet to find ways to build the project easily on my mac and dear lord. i already knew about the qt/cpp build ecosystem problem because of some other things i tried to fiddle with before.
+first of all i'm a very openionated person, that's one of the reasons i love open-source. if something is itching, then you can go break some stuff. when i'm trying the mms simulator (which is awesome and props to mack for providing executables for all platforms, god what a legend), i wanted to make some changes to make the user experience a bit better and adding additional sim capabilities. then i found out he used qt for the gui. so... (long pause and a deep sigh). i went through the internet to find ways to build the project easily on my mac and dear lord. i already knew about the qt/cpp build ecosystem problem because of some other things i tried to fiddle with before.
 
-another smoldering fire that was burning in me was to try the zig language which i was learning at the time of the project's inception, in a potentially usefull and cool application. and with many other motimations, this was born.
+another smoldering fire that was burning in me was to try the zig language which i was learning at the time of the project's inception, in a potentially usefull and cool application. and with many other motivations, azem was born.
 
-initially i didn't have much time, i just had a rough idea about what i wanted to do. i just yoinked the gui layout idea from mms and tried to recreate it with dvui in zig. went well to be honest. and rendering the maze with raylib was very cool.
+> yeah if you haven't figured already, azem is just the letter `m` on the word "maze" cycled to the back.
+
+initially i didn't have much time, i just had a rough idea about what i wanted to do. i just yoinked the gui layout idea from mms and tried to recreate it with dvui in zig. went well to be honest. and rendering the maze with raylib was very cool. now SDL3 backend is being used because of some limitations of raylib backend. much of app architectural decisions were also inspired from [pixi](https://github.com/foxnne/pixi/tree/dvui) (another awesome zig project by an awesome person currently being migrated to dvui).
 
 ## getting started
 
@@ -34,7 +36,7 @@ zig build web # to run on web browser! yeah i know awesome right
 
 - [x] basic theme
 - [x] basic maze loading and rendering
-- [x] native and web compatibility (credits to zig and dvui)
+- [x] native and web compatibility
 
 ### next
 
@@ -95,6 +97,7 @@ zig build web # to run on web browser! yeah i know awesome right
 
 ### big thanks to
 
-- ZSF : zig is godlike (i'm living off my parents, if you can go donate them)
+- ZSF : zig is godlike (for better or for worse i'm still living off my parents, if you can please go donate them)
 - mackorone : for creating the awesome piece of software that is mms
 - david-vanderson : dvui is awesome
+- foxnne : pixi codebase rocks
