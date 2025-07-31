@@ -8,42 +8,6 @@ g: u8 = 0xff,
 b: u8 = 0xff,
 a: u8 = 0xff,
 
-/// Semantic color roles for UI components
-pub const Role = enum {
-    // Text colors
-    text_primary,
-    text_secondary,
-    text_disabled,
-    text_accent,
-    text_error,
-    text_warning,
-    text_success,
-
-    // Background colors
-    background_primary,
-    background_secondary,
-    background_elevated,
-    background_overlay,
-
-    // Interactive colors
-    interactive_primary,
-    interactive_secondary,
-    interactive_hover,
-    interactive_pressed,
-    interactive_disabled,
-
-    // Border colors
-    border_primary,
-    border_secondary,
-    border_focus,
-
-    // Status colors
-    status_error,
-    status_warning,
-    status_success,
-    status_info,
-};
-
 pub const Palettes = struct {
     pub const CatppuccinMocha = struct {
         // Base colors
@@ -124,20 +88,21 @@ pub const Palettes = struct {
     };
 };
 
-pub fn toNormalizedRGBA(self: Color) struct { r: f32, g: f32, b: f32, a: f32 } {
+/// Returns normalized RGBA components as floats (0.0 - 1.0)
+pub fn toNormalizedRGBA(color: dvui.Color) struct { r: f32, g: f32, b: f32, a: f32 } {
     return .{
-        .r = @as(f32, @floatFromInt(self.r)) / 255.0,
-        .g = @as(f32, @floatFromInt(self.g)) / 255.0,
-        .b = @as(f32, @floatFromInt(self.b)) / 255.0,
-        .a = @as(f32, @floatFromInt(self.a)) / 255.0,
+        .r = @as(f32, @floatFromInt(color.r)) / 255.0,
+        .g = @as(f32, @floatFromInt(color.g)) / 255.0,
+        .b = @as(f32, @floatFromInt(color.b)) / 255.0,
+        .a = @as(f32, @floatFromInt(color.a)) / 255.0,
     };
 }
 
 /// Returns normalized RGB components as floats (0.0 - 1.0), ignoring alpha
-pub fn toNormalizedRGB(self: Color) struct { r: f32, g: f32, b: f32 } {
+pub fn toNormalizedRGB(color: dvui.Color) struct { r: f32, g: f32, b: f32 } {
     return .{
-        .r = @as(f32, @floatFromInt(self.r)) / 255.0,
-        .g = @as(f32, @floatFromInt(self.g)) / 255.0,
-        .b = @as(f32, @floatFromInt(self.b)) / 255.0,
+        .r = @as(f32, @floatFromInt(color.r)) / 255.0,
+        .g = @as(f32, @floatFromInt(color.g)) / 255.0,
+        .b = @as(f32, @floatFromInt(color.b)) / 255.0,
     };
 }

@@ -92,6 +92,7 @@ pub fn maze_layout() !void {
         .color_fill = .fromColor(azem.thm.color_fill_panel),
         .corner_radius = azem.thm.size_corner_radius_panel,
         .border = azem.thm.size_border_panel,
+        .color_border = .fromColor(azem.colors.peach.opacity(0.2)),
     });
     defer vbox.deinit();
 
@@ -107,10 +108,16 @@ pub fn console_layout() !void {
         .color_fill = .fromColor(azem.thm.color_fill_panel),
         .corner_radius = azem.thm.size_corner_radius_panel,
         .border = azem.thm.size_border_panel,
+        .color_border = .fromColor(azem.colors.green.opacity(0.2)),
     });
     defer vbox2.deinit();
 
-    var tl = dvui.textLayout(@src(), .{}, tl_opts);
+    var tl = dvui.textLayout(@src(), .{}, .{
+        .expand = .horizontal,
+        .font_style = .title_2,
+        .background = false,
+        .color_text = .fromColor(azem.colors.green),
+    });
     tl.format("console", .{}, .{});
     tl.deinit();
 }
@@ -124,6 +131,7 @@ pub fn sidebar_layout() !void {
         .margin = azem.thm.size_margin_sidebar,
         .corner_radius = azem.thm.size_corner_radius_panel,
         .border = azem.thm.size_border_panel,
+        .color_border = .fromColor(azem.colors.blue.opacity(0.2)),
     });
     defer vbox.deinit();
 
@@ -252,9 +260,10 @@ fn renderMaze() !void {
 
     var info_layout = dvui.textLayout(@src(), .{}, .{
         .font_style = .title_4,
-        .margin = .{ .x = 10, .y = 10 },
+        .gravity_x = 0.5,
         .background = true,
         .color_fill = .fromColor(azem.thm.color_fill_window.opacity(0.7)),
+        .color_text = .fromColor(azem.colors.peach),
         .padding = .{ .x = 8, .y = 4, .w = 8, .h = 4 },
         .corner_radius = .{ .x = 4, .y = 4, .w = 4, .h = 4 },
     });
