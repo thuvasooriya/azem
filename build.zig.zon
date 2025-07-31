@@ -1,0 +1,26 @@
+.{
+    .name = .azem,
+    .version = "0.0.1",
+    .fingerprint = 0xd03120fbf74d1c71,
+    .minimum_zig_version = "0.14.0",
+    .dependencies = .{
+        .dvui = .{
+            // .path = "deps/dvui",
+            .url = "https://github.com/david-vanderson/dvui/archive/037e00a0a2637062b402febcedceccbc75e4307f.tar.gz",
+            .hash = "dvui-0.2.0-AQFJmYGO0gBO4PalwDuqh_posfYm7LBnnMFq0hQLx-Tx",
+        },
+        .mach_objc = .{
+            .url = "https://github.com/foxnne/mach-objc/archive/6fd00e445d644309ecb907ea327f7a4be3e835f1.tar.gz",
+            .hash = "mach_objc-0.0.0-AAAAAEgvDQBBGTHtfgZD-MGfQARlVomEfEYZsAgYjIYd",
+            .lazy = true,
+        },
+    },
+    .paths = .{
+        "assets",
+        "src",
+        "build.zig",
+        "build.zig.zon",
+        "readme.md",
+        "license",
+    },
+}

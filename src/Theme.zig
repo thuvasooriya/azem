@@ -1,0 +1,184 @@
+const std = @import("std");
+const builtin = @import("builtin");
+const dvui = @import("dvui");
+const azem = @import("azem.zig");
+const objc = @import("objc");
+
+const jbm_regular_ttf = @embedFile("fonts/JetBrainsMonoNLNerdFont-Regular.ttf");
+const jbm_bold_ttf = @embedFile("fonts/JetBrainsMonoNLNerdFont-Bold.ttf");
+
+const Theme = @This();
+const App = azem.App;
+const Color = azem.Color;
+
+name: []const u8 = undefined,
+dark: bool = true,
+
+color_background: dvui.Color = undefined,
+color_fill_panel: dvui.Color = undefined,
+color_fill_button: dvui.Color = undefined,
+
+color_fill_window: dvui.Color = undefined,
+color_fill_hover: dvui.Color = undefined,
+color_fill_press: dvui.Color = undefined,
+color_fill_control: dvui.Color = undefined,
+color_border: dvui.Color = undefined,
+
+color_text: dvui.Color = undefined,
+color_primary: dvui.Color = undefined,
+color_secondary: dvui.Color = undefined,
+color_accent: dvui.Color = undefined,
+color_error: dvui.Color = undefined,
+color_success: dvui.Color = undefined,
+
+color_maze_walls: dvui.Color = undefined,
+
+size_font: f32 = undefined,
+size_border_panel: dvui.Rect = undefined,
+size_padding_panel: dvui.Rect = undefined,
+size_corner_radius_panel: dvui.Rect = undefined,
+size_handle: f32 = undefined,
+
+size_margin_azem: dvui.Rect = undefined,
+size_margin_console: dvui.Rect = undefined,
+size_margin_maze: dvui.Rect = undefined,
+size_margin_sidebar: dvui.Rect = undefined,
+
+ratio_sidebar: f32 = undefined,
+ratio_console: f32 = undefined,
+
+allocator: std.mem.Allocator = undefined,
+app: *App = undefined,
+
+pub fn init(
+    app: *App,
+) !Theme {
+    dvui.addFont("JetBrainsMono", jbm_regular_ttf, null) catch {};
+    dvui.addFont("JetBrainsMonoBold", jbm_bold_ttf, null) catch {};
+
+    const thm: Theme = .{
+        .allocator = app.allocator,
+        .app = app,
+        .name = "test",
+        .color_background = azem.colors.crust,
+        .color_fill_panel = azem.colors.crust,
+        .color_fill_window = azem.colors.crust,
+        .color_fill_hover = azem.colors.base,
+        .color_fill_press = azem.colors.surface0,
+        .color_fill_control = azem.colors.mantle,
+        .color_primary = azem.colors.blue,
+        .color_secondary = azem.colors.mauve,
+        .color_accent = azem.colors.yellow,
+        .color_text = azem.colors.blue,
+        .color_error = azem.colors.red,
+        .color_success = azem.colors.green,
+        .color_border = azem.colors.base,
+
+        .color_maze_walls = azem.colors.sapphire,
+
+        .size_font = 16,
+        .size_handle = 2,
+        .size_border_panel = .all(1),
+        .size_padding_panel = .all(10),
+        .size_corner_radius_panel = .all(5),
+        .size_margin_console = .{ .x = 0, .y = 3, .h = 0, .w = 3 },
+        .size_margin_maze = .{ .x = 0, .h = 3, .w = 3, .y = 0 },
+        .size_margin_sidebar = .{ .x = 3, .y = 0, .h = 0, .w = 0 },
+        // .size_margin_azem = .all(10),
+        .size_margin_azem = .{ .x = 10, .y = 0, .h = 10, .w = 10 },
+
+        .ratio_console = 0.7,
+        .ratio_sidebar = 0.7,
+    };
+    return thm;
+}
+
+pub fn set(
+    app: *App,
+    thm: *Theme,
+) void {
+    const theme = dvui.themeGet();
+    theme.dark = thm.dark;
+    theme.name = thm.name;
+    theme.color_fill = thm.color_background;
+    theme.color_fill_window = thm.color_fill_window;
+
+    theme.color_text = thm.color_text;
+    theme.color_text_press = thm.color_text;
+
+    theme.color_fill_control = thm.color_fill_control;
+    theme.color_fill_hover = thm.color_fill_hover;
+    theme.color_border = thm.color_border;
+    theme.color_fill_press = thm.color_fill_press;
+    theme.color_accent = thm.color_accent;
+    theme.color_err = thm.color_error;
+
+    theme.font_body = .{ .id = .fromName("JetBrainsMono"), .size = thm.size_font };
+    theme.font_caption = .{ .id = .fromName("JetBrainsMono"), .size = (thm.size_font - 2) };
+    theme.font_title = .{ .id = .fromName("JetBrainsMono"), .size = (thm.size_font - 1) };
+    theme.font_title_1 = .{ .id = .fromName("JetBrainsMonoBold"), .size = (thm.size_font + 1) };
+    theme.font_title_2 = .{ .id = .fromName("JetBrainsMonoBold"), .size = thm.size_font };
+    theme.font_title_3 = .{ .id = .fromName("JetBrainsMonoBold"), .size = (thm.size_font - 1) };
+    theme.font_heading = .{ .id = .fromName("JetBrainsMonoBold"), .size = (thm.size_font - 1) };
+    theme.font_title_4 = .{ .id = .fromName("JetBrainsMonoBold"), .size = (thm.size_font - 2) };
+
+    // background layers
+    setTitlebarColor(app.window, theme.color_fill);
+    dvui.themeSet(theme);
+}
+
+/// Returns normalized RGBA components as floats (0.0 - 1.0)
+fn setTitlebarColor(win: *dvui.Window, dvui_color: dvui.Color) void {
+    // this sets the native window titlebar color on macos currently only for sdl3
+    if (builtin.os.tag == .macos) {
+        switch (dvui.backend.kind) {
+            .sdl3 => {
+                const color: Color = .{ .r = dvui_color.r, .g = dvui_color.g, .b = dvui_color.b, .a = dvui_color.a };
+                const native_window: ?*objc.app_kit.Window = @ptrCast(dvui.backend.c.SDL_GetPointerProperty(
+                    dvui.backend.c.SDL_GetWindowProperties(win.backend.impl.window),
+                    dvui.backend.c.SDL_PROP_WINDOW_COCOA_WINDOW_POINTER,
+                    null,
+                ));
+                if (native_window) |window| {
+                    window.setTitlebarAppearsTransparent(true);
+                    const norm = color.toNormalizedRGBA();
+                    window.setBackgroundColor(
+                        objc.app_kit.Color.colorWithRed_green_blue_alpha(
+                            norm.r,
+                            norm.g,
+                            norm.b,
+                            norm.a,
+                        ),
+                    );
+                }
+            },
+            else => {},
+        }
+    }
+}
+
+pub const ThemeVariant = enum {
+    catppuccin_mocha,
+    catppuccin_latte,
+    catppuccin_frappe,
+    catppuccin_macchiato,
+    one_dark,
+    monokai,
+
+    pub const Meta = struct {
+        name: []const u8,
+        dark: bool,
+        author: []const u8,
+    };
+
+    pub fn meta(self: ThemeVariant) Meta {
+        return switch (self) {
+            .catppuccin_mocha => .{ .name = "Catppuccin Mocha", .dark = true, .author = "Catppuccin Team" },
+            .catppuccin_latte => .{ .name = "Catppuccin Latte", .dark = false, .author = "Catppuccin Team" },
+            .catppuccin_frappe => .{ .name = "Catppuccin Frappé", .dark = true, .author = "Catppuccin Team" },
+            .catppuccin_macchiato => .{ .name = "Catppuccin Macchiato", .dark = true, .author = "Catppuccin Team" },
+            .one_dark => .{ .name = "One Dark", .dark = true, .author = "Atom Team" },
+            .monokai => .{ .name = "Monokai", .dark = true, .author = "Sublime Text" },
+        };
+    }
+};
