@@ -37,6 +37,7 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
 
     var sidebar_paned = dvui.paned(@src(), .{
         .direction = .horizontal,
+        .split_ratio = &pane_state_ptr.sidebar_split,
         .collapsed_size = 500,
         .handle_size = azem.thm.size_handle,
         .handle_margin = azem.thm.size_margin_symmetric_handle,
@@ -47,7 +48,18 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
         .margin = azem.thm.size_margin_azem,
     });
     defer sidebar_paned.deinit();
-    pane_state_ptr.sidebar_paned = sidebar_paned;
+
+    if (pane_state_ptr.switch_to_sidebar) {
+        pane_state_ptr.switch_to_sidebar = false;
+        sidebar_paned.animateSplit(0);
+        pane_state_ptr.active_pane = .sidebar;
+    }
+
+    const switch_to_maze = pane_state_ptr.switch_to_maze;
+    pane_state_ptr.switch_to_maze = false;
+    if (switch_to_maze) {
+        sidebar_paned.animateSplit(1);
+    }
 
     if (dvui.firstFrame(sidebar_paned.wd.id)) {
         sidebar_paned.split_ratio.* = azem.thm.ratio_sidebar;
@@ -56,6 +68,7 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
     if (sidebar_paned.showFirst()) {
         var console_paned = dvui.paned(@src(), .{
             .direction = .vertical,
+            .split_ratio = &pane_state_ptr.console_split,
             .collapsed_size = 500,
             .handle_size = azem.thm.size_handle,
             .handle_dynamic = .{ .handle_size_max = azem.thm.size_handle, .distance_max = 200 },
@@ -63,7 +76,16 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
             .uncollapse_ratio = azem.thm.ratio_console,
         }, .{ .expand = .both });
         defer console_paned.deinit();
-        pane_state_ptr.console_paned = console_paned;
+
+        if (pane_state_ptr.switch_to_console) {
+            pane_state_ptr.switch_to_console = false;
+            console_paned.animateSplit(0);
+            pane_state_ptr.active_pane = .console;
+        }
+
+        if (switch_to_maze) {
+            console_paned.animateSplit(1);
+        }
 
         if (dvui.firstFrame(console_paned.wd.id)) console_paned.split_ratio.* = azem.thm.ratio_console;
 
@@ -396,7 +418,7 @@ pub fn sidebar_layout() !void {
     defer vbox.deinit();
 
     const console = getConsoleState(std.heap.page_allocator);
-    // const pane_state_ptr = getPaneState(std.heap.page_allocator);
+    const pane_state_ptr = getPaneState(std.heap.page_allocator);
 
     var tl = dvui.textLayout(@src(), .{}, .{
         .font_style = .title_2,
@@ -462,52 +484,37 @@ pub fn sidebar_layout() !void {
 
     // FIXME: pane_state functions not working inside sidebar_layout()
 
-    // if (pane_state_ptr.isMazeCollapsed() or pane_state_ptr.isConsoleCollapsed()) {
-    //     var tooltip: dvui.FloatingTooltipWidget = .init(@src(), .{
-    //         .active_rect = vbox.data().borderRectScale().r,
-    //         .interactive = true,
-    //         .position = .sticky,
-    //     }, .{
-    //         .background = true,
-    //     });
-    //     defer tooltip.deinit();
-    //
-    //     if (tooltip.shown()) {
-    //         var animator = dvui.animate(@src(), .{ .kind = .alpha, .duration = 250_000 }, .{ .expand = .both });
-    //         defer animator.deinit();
-    //
-    //         var controls_box = dvui.box(@src(), .{ .dir = .vertical }, .{
-    //             .expand = .both,
-    //         });
-    //         defer controls_box.deinit();
-    //
-    //         if (pane_state_ptr.isMazeCollapsed()) {
-    //             if (dvui.button(@src(), "show maze", .{}, .{
-    //                 .expand = .horizontal,
-    //                 .min_size_content = .{ .h = 16 },
-    //                 .color_fill = .fromColor(azem.colors.peach.opacity(0.3)),
-    //                 .corner_radius = .all(4),
-    //                 .font_style = .caption,
-    //             })) {
-    //                 pane_state_ptr.switchToMaze();
-    //                 console.addMessage(.info, "switched to maze", .{}) catch {};
-    //             }
-    //         }
-    //
-    //         if (pane_state_ptr.isConsoleCollapsed()) {
-    //             if (dvui.button(@src(), "show console", .{}, .{
-    //                 .expand = .horizontal,
-    //                 .min_size_content = .{ .h = 16 },
-    //                 .color_fill = .fromColor(azem.colors.green.opacity(0.3)),
-    //                 .corner_radius = .all(4),
-    //                 .font_style = .caption,
-    //             })) {
-    //                 pane_state_ptr.switchToConsole();
-    //                 console.addMessage(.info, "switched to console", .{}) catch {};
-    //             }
-    //         }
-    //     }
-    // }
+     if (pane_state_ptr.isSidebarOnly()) {
+         var tooltip: dvui.FloatingTooltipWidget = .init(@src(), .{
+             .active_rect = vbox.data().borderRectScale().r,
+             .interactive = true,
+             .position = .sticky,
+         }, .{
+             .background = true,
+         });
+         defer tooltip.deinit();
+    
+         if (tooltip.shown()) {
+             var animator = dvui.animate(@src(), .{ .kind = .alpha, .duration = 250_000 }, .{ .expand = .both });
+             defer animator.deinit();
+    
+             var controls_box = dvui.box(@src(), .{ .dir = .vertical }, .{
+                 .expand = .both,
+             });
+             defer controls_box.deinit();
+    
+             if (dvui.button(@src(), "show maze/console", .{}, .{
+                 .expand = .horizontal,
+                 .min_size_content = .{ .h = 16 },
+                 .color_fill = .fromColor(azem.colors.peach.opacity(0.3)),
+                 .corner_radius = .all(4),
+                 .font_style = .caption,
+             })) {
+                 pane_state_ptr.switchToMaze();
+                 console.addMessage(.info, "switched to maze/console", .{}) catch {};
+             }
+         }
+     }
 }
 
 pub fn deinit(eng: *Engine) !void {
@@ -657,10 +664,13 @@ const ConsoleState = struct {
 };
 
 const PaneState = struct {
-    sidebar_paned: ?*dvui.PanedWidget = null,
-    console_paned: ?*dvui.PanedWidget = null,
+    sidebar_split: f32 = 0.5,
+    console_split: f32 = 0.5,
     active_pane: ActivePane = .maze,
     allocator: std.mem.Allocator = undefined,
+    switch_to_sidebar: bool = false,
+    switch_to_console: bool = false,
+    switch_to_maze: bool = false,
 
     const ActivePane = enum {
         maze,
@@ -685,45 +695,27 @@ const PaneState = struct {
     }
 
     pub fn isMazeCollapsed(self: *Self) bool {
-        if (self.console_paned) |paned| {
-            return !paned.showFirst();
-        }
-        return true;
+        return self.console_split == 0;
     }
     pub fn isConsoleCollapsed(self: *Self) bool {
-        if (self.console_paned) |paned| {
-            return !paned.showSecond();
-        }
-        return true;
+        return self.console_split == 1;
     }
     pub fn isSidebarCollapsed(self: *Self) bool {
-        if (self.sidebar_paned) |paned| {
-            return paned.collapsed();
-        }
-        return true;
+        return self.sidebar_split == 1;
+    }
+    pub fn isSidebarOnly(self: *Self) bool {
+        return self.sidebar_split == 0;
     }
 
     pub fn switchToSidebar(self: *Self) void {
-        if (self.sidebar_paned) |paned| {
-            paned.animateSplit(0);
-            self.active_pane = .sidebar;
-        }
+        self.switch_to_sidebar = true;
     }
 
     pub fn switchToConsole(self: *Self) void {
-        if (self.console_paned) |paned| {
-            paned.animateSplit(0);
-            self.active_pane = .console;
-        }
+        self.switch_to_console = true;
     }
 
     pub fn switchToMaze(self: *Self) void {
-        if (self.console_paned) |paned| {
-            paned.animateSplit(1);
-            self.active_pane = .maze;
-        }
-        if (self.sidebar_paned) |paned| {
-            paned.animateSplit(1);
-        }
+        self.switch_to_maze = true;
     }
 };
