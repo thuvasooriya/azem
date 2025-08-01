@@ -6,7 +6,7 @@ initial goals are micromouse simulation, expanding to other simulation options i
 
 here is how it looks currently
 
-![azem running in macos](https://i.imgur.com/uN2zkWV.png)
+![azem running in macos](https://i.imgur.com/pypv09P.png)
 
 ## why
 
@@ -37,6 +37,7 @@ zig build web # to run on web browser! yeah i know awesome right
 - [x] basic theme
 - [x] basic maze loading and rendering
 - [x] native and web compatibility
+- [x] console logging
 
 ### next
 
@@ -47,7 +48,6 @@ zig build web # to run on web browser! yeah i know awesome right
 - when project structure is somewhat ok
   - implement tests for existing functions
   - brainstorm the rest and come back
-- logging
 - stats
   - [ ] time
   - [ ] speed

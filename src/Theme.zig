@@ -34,15 +34,15 @@ color_success: dvui.Color = undefined,
 color_maze_walls: dvui.Color = undefined,
 
 size_font: f32 = undefined,
+size_handle: f32 = undefined,
+size_gap_panel: f32 = undefined,
 size_border_panel: dvui.Rect = undefined,
+size_border_thin: dvui.Rect = undefined,
 size_padding_panel: dvui.Rect = undefined,
 size_corner_radius_panel: dvui.Rect = undefined,
-size_handle: f32 = undefined,
 
 size_margin_azem: dvui.Rect = undefined,
-size_margin_console: dvui.Rect = undefined,
-size_margin_maze: dvui.Rect = undefined,
-size_margin_sidebar: dvui.Rect = undefined,
+size_margin_symmetric_handle: f32 = undefined,
 
 ratio_sidebar: f32 = undefined,
 ratio_console: f32 = undefined,
@@ -56,7 +56,7 @@ pub fn init(
     dvui.addFont("JetBrainsMono", jbm_regular_ttf, null) catch {};
     dvui.addFont("JetBrainsMonoBold", jbm_bold_ttf, null) catch {};
 
-    const thm: Theme = .{
+    var thm: Theme = .{
         .allocator = app.allocator,
         .app = app,
         .name = "test",
@@ -69,7 +69,7 @@ pub fn init(
         .color_primary = azem.colors.blue,
         .color_secondary = azem.colors.mauve,
         .color_accent = azem.colors.yellow,
-        .color_text = azem.colors.blue,
+        .color_text = azem.colors.text,
         .color_error = azem.colors.red,
         .color_success = azem.colors.green,
         .color_border = azem.colors.base,
@@ -77,21 +77,23 @@ pub fn init(
         .color_maze_walls = azem.colors.peach.opacity(0.7),
 
         .size_font = 16,
-        .size_handle = 2,
-        .size_border_panel = .all(1),
+        // .size_handle = 2,
+        .size_gap_panel = 10,
+
         .size_padding_panel = .all(10),
+        .size_border_panel = .all(1),
+        .size_border_thin = .all(1),
         .size_corner_radius_panel = .all(9),
-        .size_margin_console = .{ .x = 0, .y = 3, .h = 0, .w = 3 },
-        .size_margin_maze = .{ .x = 0, .h = 3, .w = 3, .y = 0 },
-        .size_margin_sidebar = .{ .x = 3, .y = 0, .h = 0, .w = 0 },
-        .size_margin_azem = switch (dvui.backend.kind) {
-            .web => .all(10),
-            else => .{ .x = 10, .y = 0, .h = 10, .w = 10 },
-        },
 
         .ratio_console = 0.7,
         .ratio_sidebar = 0.7,
     };
+    thm.size_margin_azem = switch (dvui.backend.kind) {
+        .web => .all(thm.size_gap_panel),
+        else => .{ .x = thm.size_gap_panel, .y = 0, .h = thm.size_gap_panel, .w = thm.size_gap_panel },
+    };
+    thm.size_handle = thm.size_font / 8;
+    thm.size_margin_symmetric_handle = (thm.size_gap_panel - thm.size_handle) / 2;
     return thm;
 }
 

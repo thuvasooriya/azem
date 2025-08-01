@@ -1,13 +1,13 @@
 .{
     .name = .azem,
-    .version = "0.0.1",
+    .version = "0.0.13",
     .fingerprint = 0xd03120fbf74d1c71,
     .minimum_zig_version = "0.14.0",
     .dependencies = .{
         .dvui = .{
             // .path = "deps/dvui",
-            .url = "https://github.com/david-vanderson/dvui/archive/037e00a0a2637062b402febcedceccbc75e4307f.tar.gz",
-            .hash = "dvui-0.2.0-AQFJmYGO0gBO4PalwDuqh_posfYm7LBnnMFq0hQLx-Tx",
+            .url = "https://github.com/david-vanderson/dvui/archive/904f5c174bc543e7824e8dc5547b91732d5d24b5.tar.gz",
+            .hash = "dvui-0.2.0-AQFJmfOQ0gAs1CyBgt-H38H7afhWz4Cgn6Ywl5uFnBnt",
         },
         .mach_objc = .{
             .url = "https://github.com/foxnne/mach-objc/archive/6fd00e445d644309ecb907ea327f7a4be3e835f1.tar.gz",
