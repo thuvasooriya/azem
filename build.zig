@@ -80,7 +80,7 @@ pub fn build(b: *std.Build) !void {
 
         const compile_step = b.step("wc", "compile the web app");
         compile_step.dependOn(&install_wasm.step);
-        compile_step.dependOn(&b.addInstallFileWithDir(b.path("docs/index.html"), .prefix, custom_path ++ "/index.html").step);
+        compile_step.dependOn(&b.addInstallFileWithDir(b.path("public/index.html"), .prefix, custom_path ++ "/index.html").step);
         const web_js = dvui_dep.namedLazyPath("web.js");
         compile_step.dependOn(&b.addInstallFileWithDir(web_js, .prefix, custom_path ++ "/web.js").step);
         b.getInstallStep().dependOn(compile_step);
@@ -150,11 +150,11 @@ pub fn build(b: *std.Build) !void {
         publish_app.root_module.addImport("dvui", dvui_dep.module("dvui_web"));
 
         const install_publish_wasm = b.addInstallArtifact(publish_app, .{
-            .dest_dir = .{ .override = .{ .custom = "../docs" } },
+            .dest_dir = .{ .override = .{ .custom = "../public" } },
         });
 
         const publish_web_js = dvui_dep.namedLazyPath("web.js");
-        const install_publish_js = b.addInstallFileWithDir(publish_web_js, .prefix, "../docs/web.js");
+        const install_publish_js = b.addInstallFileWithDir(publish_web_js, .prefix, "../public/web.js");
 
         const publish_step = b.step("wp", "create optimized build in docs/ directory");
         publish_step.dependOn(&install_publish_wasm.step);

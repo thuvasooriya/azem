@@ -49,7 +49,6 @@ the architecture is constantly evolving. this is almost the 4th rewrite of this 
 - [ ] implement settings struct
 - [ ] keyboard navigation
 - [ ] build wasm with github actions instead of having it in the repo
-- [ ] loading indication in index.html when wasm is being pulled
 - [ ] introduce better algorithms
 - [ ] brainstorm
   - [ ] input and output files

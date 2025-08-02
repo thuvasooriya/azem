@@ -53,13 +53,16 @@ pub fn main() !void {
         return;
     }
 
-    print("[i] starting http server...\n", .{});
+    print("[i] starting HTTP server...\n", .{});
 
     // start the http server as a child process
+    const port_str = try std.fmt.allocPrint(allocator, "{d}", .{port});
+    defer allocator.free(port_str);
+
     var server_process = std.process.Child.init(&[_][]const u8{
         server_path.?,
         "--port",
-        try std.fmt.allocPrint(allocator, "{d}", .{port}),
+        port_str,
         "--dir",
         serve_dir,
     }, allocator);

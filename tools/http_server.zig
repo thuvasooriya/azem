@@ -94,55 +94,31 @@ fn handleRequest(allocator: Allocator, request: *std.http.Server.Request, serve_
         return;
     }
 
-    // Clean the path and prevent directory traversal
+    // clean the target path - remove query parameters and fragments
+    var clean_target = target;
+    if (std.mem.indexOf(u8, target, "?")) |idx| {
+        clean_target = target[0..idx];
+    }
+    if (std.mem.indexOf(u8, clean_target, "#")) |idx| {
+        clean_target = clean_target[0..idx];
+    }
+
+    // if requesting root, serve index.html
+    if (std.mem.eql(u8, clean_target, "/")) {
+        clean_target = "/index.html";
+    }
+
+    // build the file path
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const file_path = std.fmt.bufPrint(&path_buf, "{s}{s}", .{ serve_dir, target }) catch {
+    const file_path = std.fmt.bufPrint(&path_buf, "{s}{s}", .{ serve_dir, clean_target }) catch {
         try request.respond("URI too long", .{ .status = .uri_too_long });
         return;
     };
 
-    // Normalize the path to prevent directory traversal
-    const normalized_path = std.fs.path.resolve(allocator, &[_][]const u8{file_path}) catch {
-        try request.respond("bad request", .{ .status = .bad_request });
-        return;
-    };
-    defer allocator.free(normalized_path);
-
-    // Ensure the normalized path is still within our serve directory
-    const abs_serve_dir = std.fs.path.resolve(allocator, &[_][]const u8{serve_dir}) catch {
-        try request.respond("internal server error", .{ .status = .internal_server_error });
-        return;
-    };
-    defer allocator.free(abs_serve_dir);
-
-    if (!std.mem.startsWith(u8, normalized_path, abs_serve_dir)) {
-        try request.respond("forbidden", .{ .status = .forbidden });
-        return;
-    }
-
-    // try to open the file
-    const file = std.fs.openFileAbsolute(normalized_path, .{}) catch |err| switch (err) {
+    // get the absolute path
+    const abs_path = std.fs.realpathAlloc(allocator, file_path) catch |err| switch (err) {
         error.FileNotFound => {
-            // if it's a directory, try to serve index.html
-            var dir = std.fs.openDirAbsolute(normalized_path, .{}) catch {
-                try request.respond("not found", .{ .status = .not_found });
-                return;
-            };
-            defer dir.close();
-
-            var index_path_buf: [std.fs.max_path_bytes]u8 = undefined;
-            const index_path = std.fmt.bufPrint(&index_path_buf, "{s}/index.html", .{normalized_path}) catch {
-                try request.respond("URI too long", .{ .status = .uri_too_long });
-                return;
-            };
-
-            const index_file = std.fs.openFileAbsolute(index_path, .{}) catch {
-                try request.respond("not found", .{ .status = .not_found });
-                return;
-            };
-            defer index_file.close();
-
-            try serveFile(allocator, request, index_file, "text/html");
+            try request.respond("not found", .{ .status = .not_found });
             return;
         },
         error.AccessDenied => {
@@ -150,7 +126,37 @@ fn handleRequest(allocator: Allocator, request: *std.http.Server.Request, serve_
             return;
         },
         else => {
-            std.debug.print("error opening file {s}: {any}\n", .{ normalized_path, err });
+            std.debug.print("error resolving path {s}: {any}\n", .{ file_path, err });
+            try request.respond("internal server error", .{ .status = .internal_server_error });
+            return;
+        },
+    };
+    defer allocator.free(abs_path);
+
+    // Security check: ensure the resolved path is still within serve directory
+    const abs_serve_dir = std.fs.realpathAlloc(allocator, serve_dir) catch {
+        try request.respond("internal server error", .{ .status = .internal_server_error });
+        return;
+    };
+    defer allocator.free(abs_serve_dir);
+
+    if (!std.mem.startsWith(u8, abs_path, abs_serve_dir)) {
+        try request.respond("forbidden", .{ .status = .forbidden });
+        return;
+    }
+
+    // Try to open the file
+    const file = std.fs.openFileAbsolute(abs_path, .{}) catch |err| switch (err) {
+        error.FileNotFound => {
+            try request.respond("not found", .{ .status = .not_found });
+            return;
+        },
+        error.AccessDenied => {
+            try request.respond("forbidden", .{ .status = .forbidden });
+            return;
+        },
+        else => {
+            std.debug.print("error opening file {s}: {any}\n", .{ abs_path, err });
             try request.respond("internal server error", .{ .status = .internal_server_error });
             return;
         },
@@ -158,7 +164,7 @@ fn handleRequest(allocator: Allocator, request: *std.http.Server.Request, serve_
     defer file.close();
 
     // determine content type based on file extension
-    const content_type = getContentType(normalized_path);
+    const content_type = getContentType(abs_path);
     try serveFile(allocator, request, file, content_type);
 }
 
@@ -193,7 +199,7 @@ pub fn main() !void {
         return;
     };
 
-    // Convert serve_dir to absolute path to avoid issues
+    // convert serve_dir to absolute path to avoid issues
     const abs_serve_dir = std.fs.path.resolve(allocator, &[_][]const u8{config.serve_dir}) catch |err| {
         std.debug.print("error resolving serve directory: {any}\n", .{err});
         return;
