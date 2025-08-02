@@ -2,3 +2,7 @@ zig-out/
 .zig-cache/
 /archive/
 /deps/
+/docs/
+justfile
+azem.wasm
+web.js
