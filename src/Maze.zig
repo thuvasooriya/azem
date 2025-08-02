@@ -1,4 +1,3 @@
-//! Modern Maze struct with competitive robotics integration
 const std = @import("std");
 const Maze = @This();
 
@@ -48,39 +47,37 @@ pub fn getWall(self: Maze, x: u32, y: u32) ?WallInfo {
     return self.walls[idx];
 }
 
-// Enhanced conversion with proper wall mapping
 pub fn toDVUIMaze(self: Maze) DVUIMazeData {
     var cells: [16][16]DVUIMazeCell = std.mem.zeroes([16][16]DVUIMazeCell);
 
     const render_width = @min(self.width, 16);
     const render_height = @min(self.height, 16);
 
-    // Set boundary walls using modern Zig range syntax
+    // set boundary walls
     for (0..16) |i| {
-        cells[0][i].north = true; // Top boundary
-        cells[15][i].south = true; // Bottom boundary
-        cells[i][0].west = true; // Left boundary
-        cells[i][15].east = true; // Right boundary
+        cells[0][i].north = true; // top boundary
+        cells[15][i].south = true; // bottom boundary
+        cells[i][0].west = true; // left boundary
+        cells[i][15].east = true; // right boundary
     }
 
-    // Set internal walls based on WallInfo with modern iteration
     for (0..render_height) |y| {
         for (0..render_width) |x| {
             const wall_info = self.getWall(@intCast(x), @intCast(y)) orelse continue;
 
-            // Convert right wall to east wall of current cell
+            // convert right wall to east wall of current cell
             if (wall_info.right) {
                 cells[y][x].east = true;
-                // Set west wall of adjacent cell if it exists
+                // set west wall of adjacent cell if it exists
                 if (x + 1 < 16) {
                     cells[y][x + 1].west = true;
                 }
             }
 
-            // Convert bottom wall to south wall of current cell
+            // convert bottom wall to south wall of current cell
             if (wall_info.bottom) {
                 cells[y][x].south = true;
-                // Set north wall of adjacent cell if it exists
+                // set north wall of adjacent cell if it exists
                 if (y + 1 < 16) {
                     cells[y + 1][x].north = true;
                 }
@@ -89,12 +86,11 @@ pub fn toDVUIMaze(self: Maze) DVUIMazeData {
     }
 
     return DVUIMazeData{
-        .name = "Competitive Maze",
+        .name = "maze",
         .cells = cells,
     };
 }
 
-// CRITICAL FIX: Proper const handling in parsing
 pub fn parseText(text: []const u8, allocator: std.mem.Allocator) !Maze {
     var arena = std.heap.ArenaAllocator.init(allocator);
     defer arena.deinit();
@@ -119,14 +115,12 @@ pub fn parseText(text: []const u8, allocator: std.mem.Allocator) !Maze {
     const width: u32 = @intCast(@divTrunc(first_line_len - 1, 2));
 
     var maze = try Maze.init(allocator, width, height);
-    errdefer maze.deinit(); // FIXED: Now works because maze is mutable
+    errdefer maze.deinit();
 
-    // Enhanced parsing with modern Zig bounds checking
     for (0..height) |y| {
         for (0..width) |x| {
             const wall_idx = y * width + x;
 
-            // Parse right wall with enhanced character detection
             const right_row = y * 2 + 1;
             const right_col = x * 2 + 2;
             if (right_row < lines.items.len and right_col < lines.items[right_row].len) {
@@ -136,7 +130,6 @@ pub fn parseText(text: []const u8, allocator: std.mem.Allocator) !Maze {
                 maze.walls[wall_idx].right = (x == width - 1);
             }
 
-            // Parse bottom wall with enhanced character detection
             const bottom_row = y * 2 + 2;
             const bottom_col = x * 2 + 1;
             if (bottom_row < lines.items.len and bottom_col < lines.items[bottom_row].len) {
@@ -151,7 +144,6 @@ pub fn parseText(text: []const u8, allocator: std.mem.Allocator) !Maze {
     return maze;
 }
 
-// Compatibility types with modern Zig packed structs
 pub const DVUIMazeCell = packed struct {
     north: bool = false,
     east: bool = false,
@@ -164,29 +156,42 @@ pub const DVUIMazeData = struct {
     cells: [16][16]DVUIMazeCell,
 };
 
-// CRITICAL FIX: Proper switch statement syntax for maze generation
 pub const Examples = struct {
-    pub fn getExampleMazes(allocator: std.mem.Allocator) ![3]DVUIMazeData {
-        const example_texts = [_]struct {
-            name: []const u8,
-            text: []const u8,
-        }{
-            .{ .name = "APEC 2018", .text = examples.apec2018 },
-            .{ .name = "APEC 2017", .text = examples.apec2017 },
-            .{ .name = "JAPAN 2017", .text = examples.japan2017 },
-        };
+    const example_texts = [_]struct {
+        name: []const u8,
+        text: []const u8,
+    }{
+        .{ .name = "APEC 2018", .text = examples.apec2018 },
+        .{ .name = "APEC 2017", .text = examples.apec2017 },
+        .{ .name = "JAPAN 2017", .text = examples.japan2017 },
+        .{ .name = "APEC 2016", .text = examples.apec2016 },
+        .{ .name = "APEC 2015", .text = examples.apec2015 },
+        .{ .name = "JAPAN 2015", .text = examples.japan2015 },
+        .{ .name = "APEC 2014", .text = examples.apec2014 },
+        .{ .name = "JAPAN 2014", .text = examples.japan2014 },
+        .{ .name = "APEC 2013", .text = examples.apec2013 },
+        .{ .name = "JAPAN 2013", .text = examples.japan2013 },
+    };
 
-        var result: [3]DVUIMazeData = undefined;
+    pub const maze_names = blk: {
+        var names: [example_texts.len][]const u8 = undefined;
+        for (example_texts, 0..) |example, i| {
+            names[i] = example.name;
+        }
+        break :blk names;
+    };
+
+    pub fn getExampleMazes(allocator: std.mem.Allocator) ![10]DVUIMazeData {
+        var result: [10]DVUIMazeData = undefined;
 
         for (example_texts, 0..) |example, i| {
             if (parseText(example.text, allocator)) |maze| {
-                // FIXED: Proper mutable reference for deinit
                 var mutable_maze = maze;
                 defer mutable_maze.deinit();
                 result[i] = mutable_maze.toDVUIMaze();
                 result[i].name = example.name;
             } else |err| {
-                std.log.warn("Failed to parse maze {s}: {}", .{ example.name, err });
+                std.log.warn("failed to parse maze {s}: {}", .{ example.name, err });
                 result[i] = createFallbackMaze(example.name, i);
             }
         }
@@ -194,7 +199,6 @@ pub const Examples = struct {
         return result;
     }
 
-    // CRITICAL FIX: Proper switch statement with block expressions
     fn createFallbackMaze(name: []const u8, pattern_seed: usize) DVUIMazeData {
         var cells: [16][16]DVUIMazeCell = std.mem.zeroes([16][16]DVUIMazeCell);
 
@@ -206,7 +210,6 @@ pub const Examples = struct {
             cells[i][15].east = true;
         }
 
-        // FIXED: Proper switch statement with block expressions
         for (1..15) |y| {
             for (1..15) |x| {
                 const pattern = (x + y * 16 + pattern_seed) % 4;
@@ -231,7 +234,7 @@ pub const Examples = struct {
                             cells[y][x].west = true;
                         }
                     },
-                    else => unreachable, // Modern Zig: explicit unreachable for exhaustive switch
+                    else => unreachable,
                 }
             }
         }
@@ -243,7 +246,6 @@ pub const Examples = struct {
     }
 };
 
-// Example maze data (cleaned up)
 pub const examples = struct {
     pub const apec2018 =
         \\+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -349,6 +351,252 @@ pub const examples = struct {
         \\+ + + +-+-+ +-+-+-+-+-+ + + + + +
         \\|   | | | |                     |
         \\+ + + + + + + + + + + + + + + + +
+        \\| |                             |
+        \\.-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ;
+    pub const apec2016 =
+        \\+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \\|                               |
+        \\+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+ +
+        \\| |                             |
+        \\+ + +-+-+-+-+-+-+-+-+-+-+-+-+-+ +
+        \\| | |       |   |   |         | |
+        \\+ + + +-+ +-+ + + + + +-+-+-+ + +
+        \\| | | | |     | | | | |   |   | |
+        \\+ + + + +-+-+-+ + + + +-+ + +-+ +
+        \\| | | |         | | | |     |   |
+        \\+ + + + +-+-+-+ + + + +-+ +-+ + +
+        \\| | | | |   | | | |   |   | | | |
+        \\+ + + + + + + +-+ +-+-+ +-+ + + +
+        \\| | | |   | |     |       |   | |
+        \\+ + + +-+-+ + +-+-+-+ +-+-+ + + +
+        \\| | | |     | |   |     | | | | |
+        \\+ + + + + +-+ + + + +-+-+ + + + +
+        \\| | | | | |   |         |   | | |
+        \\+ + + + +-+ +-+-+-+-+-+ + + + + +
+        \\| | | | |     |       | | | | | |
+        \\+ + + + + +-+-+-+-+ + + + +-+-+ +
+        \\| | | | |   |       | | |     | |
+        \\+ + + + + + + +-+ +-+ + +-+-+ + +
+        \\| | | |   | |       | |     | | |
+        \\+ + + +-+-+ +-+ +-+ + +-+-+ + + +
+        \\| |   |     |       | |   | | | |
+        \\+ +-+ + +-+-+ +-+ +-+ + + + + + +
+        \\|   | |             |   |   | | |
+        \\+ + + +-+-+-+-+-+-+-+-+-+-+-+ + +
+        \\| | |                         | |
+        \\+ + +-+-+-+-+-+-+-+-+-+-+-+-+-+ +
+        \\| |                             |
+        \\.-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ;
+    pub const apec2015 =
+        \\+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \\|                               |
+        \\+ +-+-+-+-+-+-+-+-+-+-+-+-+-+ +-+
+        \\| |                             |
+        \\+ + +-+-+-+-+-+-+-+-+-+-+-+-+ + +
+        \\| | |         |               | |
+        \\+ + + + +-+-+ +-+ +-+-+-+-+-+-+ +
+        \\| | | |     |   |             | |
+        \\+ + + + + +-+-+ +-+-+-+-+-+-+ + +
+        \\| | | | |     |     |   |   | | |
+        \\+ + + + + + +-+ +-+ + + + + + + +
+        \\| | | | | |   |   |   | | | | | |
+        \\+ + + + + + + +-+ +-+-+ + + + + +
+        \\| | | | | | |   |   |   | | | | |
+        \\+ + + +-+ + + + +-+-+ +-+ + + + +
+        \\| | | | |   | |   |     | | | | |
+        \\+ + + + + + + + + + +-+-+ + + + +
+        \\| | | | | |   |   |     | | | | |
+        \\+ + + + + +-+ +-+-+-+-+ + + + + +
+        \\| | | | |     |       | | | | | |
+        \\+ + + + +-+-+-+-+-+ +-+ + + + + +
+        \\| | | | |         |   | | | | | |
+        \\+ + + + + +-+-+-+ +-+ + + + + + +
+        \\| | | | | |     | |   | | | | | |
+        \\+ + + + + + +-+ + + + + + + + + +
+        \\| | | | |   |   |   | |   | | | |
+        \\+ + + + +-+-+ +-+ +-+-+ + + + + +
+        \\|   | |         |     | | |   | |
+        \\+ + + + +-+-+ +-+ +-+-+-+-+-+ + +
+        \\| | |           |             | |
+        \\+ + +-+-+-+-+-+-+-+-+-+-+-+-+-+ +
+        \\| |                             |
+        \\.-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ;
+    pub const japan2015 =
+        \\+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \\|                               |
+        \\+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+ +
+        \\| |                           | |
+        \\+ + +-+-+-+-+-+-+-+-+-+-+-+ +-+ +
+        \\| | |   |                 |   | |
+        \\+ + + + + + +-+-+-+-+ +-+ +-+ + +
+        \\| | | | | |           | |   |   |
+        \\+ + + + + +-+ +-+-+ +-+ +-+ +-+ +
+        \\| | | | |   |   |   |     |   | |
+        \\+ + + + + +-+-+ + +-+ + +-+ +-+ +
+        \\| | | | |     |   |   |     | | |
+        \\+ + + + + +-+-+ + +-+ +-+ +-+ +-+
+        \\| | | | |   |   |   |   | |     |
+        \\+ + + + + +-+ +-+-+ +-+ +-+-+ +-+
+        \\| | | |   |   |   |   |   |     |
+        \\+ + + + +-+ +-+ + +-+ +-+ + +-+ +
+        \\| | | | |   |       |   |   |   |
+        \\+ + + +-+ +-+ +-+-+ +-+ +-+-+ +-+
+        \\| |   |   | |   |   | |   |     |
+        \\+ + +-+ +-+ +-+ + +-+ +-+ +-+ +-+
+        \\| | |   |     |   |     |   |   |
+        \\+ +-+ +-+ + +-+ + +-+ + +-+ +-+ +
+        \\| |   |   |     |     |   |   | |
+        \\+ +-+ + +-+-+ +-+-+ +-+-+ + +-+ +
+        \\| |     | |     |     | |   |   |
+        \\+ +-+ + + + +-+ + +-+ + + +-+ +-+
+        \\|   | |     | |   | |     |     |
+        \\+-+ + +-+ +-+ +-+-+ +-+ +-+-+ +-+
+        \\|   |     |     |     | |   |   |
+        \\+ + +-+-+-+ +-+ + +-+ +-+ + +-+ +
+        \\| |         |       |     |     |
+        \\.-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ;
+    pub const apec2014 =
+        \\+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \\|                               |
+        \\+ +-+-+-+-+-+-+-+-+-+-+-+-+-+ + +
+        \\| |   |       |               | |
+        \\+ + + + +-+-+ +-+ +-+-+-+-+-+-+ +
+        \\| | | |   |     |     |       | |
+        \\+ + + +-+ +-+-+ + +-+ +-+ +-+ + +
+        \\| | | | |     | | |     |   | | |
+        \\+ + + + +-+-+ + +-+-+ +-+-+ + + +
+        \\| | |       | |     |     | | | |
+        \\+ + +-+-+-+ + +-+ +-+-+-+ + + + +
+        \\| |   | |   |   |     | | | | | |
+        \\+ +-+ + + +-+ + +-+ +-+ + + + + +
+        \\| | |   |   | |   |     | | | | |
+        \\+ + +-+ +-+ + +-+ + + +-+ + + + +
+        \\| |   |   |   |   | |   |   | | |
+        \\+ + + +-+ +-+ + + + + + +-+-+ + +
+        \\| | | |     | |   | | |     | | |
+        \\+ + + +-+-+ +-+-+-+ + + + + + + +
+        \\| | | |   |     |   |   | | | | |
+        \\+ + + + + +-+ +-+-+-+-+-+-+ + + +
+        \\| | | | |   |   |     | |   | | |
+        \\+ + + + +-+ +-+ + + +-+ +-+ + + +
+        \\| | | | |   |     | |     |   | |
+        \\+ + + + + +-+-+-+-+ +-+ + +-+ + +
+        \\| | | | |           |   | | | | |
+        \\+ + + + +-+-+-+-+-+-+ +-+ + +-+ +
+        \\|   | |                 |     | |
+        \\+ + + +-+-+-+-+-+-+-+-+-+-+-+ + +
+        \\| | |                         | |
+        \\+ + +-+-+-+-+-+-+-+-+-+-+-+-+-+ +
+        \\| |                             |
+        \\.-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ;
+
+    pub const apec2013 =
+        \\+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \\|                               |
+        \\+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+ +
+        \\| |                             |
+        \\+ + +-+-+-+-+-+-+-+-+ +-+-+-+-+ +
+        \\| | |             |           | |
+        \\+ + + +-+-+-+ +-+-+-+-+ +-+-+ + +
+        \\| | | | |   |     | |   |     | |
+        \\+ + + + + + +-+-+ + + +-+ +-+-+ +
+        \\| | | |   | |   |   | |       | |
+        \\+ + + + +-+ + + +-+ + +-+-+-+ + +
+        \\| | | |   | | |   |   |       | |
+        \\+ + + +-+ + + +-+ +-+-+ +-+-+-+ +
+        \\| | |     | | |       |     | | |
+        \\+ + +-+-+-+ + +-+-+-+ +-+-+ + + +
+        \\| | |   |   | |     |       | | |
+        \\+ + + + +-+ + + + + +-+-+-+-+ + +
+        \\| | | |   | | |   |     |     | |
+        \\+ + + +-+ + + +-+-+-+ +-+ + + + +
+        \\| | | |   |   |     |   | | | | |
+        \\+ + + + +-+ +-+-+ + +-+ + +-+ + +
+        \\| | | |     |   | |   |       | |
+        \\+ + + +-+-+-+ + + +-+ +-+ +-+ + +
+        \\| | |       | | |   |   |   | | |
+        \\+ + +-+-+-+ + + +-+ +-+ +-+ + + +
+        \\| | |       | | |     |   |   | |
+        \\+ + + +-+-+-+ + +-+-+ +-+ +-+ + +
+        \\|   | |       | |       |   | | |
+        \\+ + + +-+-+-+ + +-+-+-+ +-+ + + +
+        \\| | |         |         |     | |
+        \\+ + +-+-+-+-+-+-+-+-+-+-+-+-+-+ +
+        \\| |                             |
+        \\.-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ;
+    pub const japan2014 =
+        \\+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \\|   |                           |
+        \\+ + + +-+-+-+-+-+-+-+-+-+-+-+-+ +
+        \\| | |   |                     | |
+        \\+ + + +-+ +-+-+-+-+-+-+-+-+-+ + +
+        \\| | | |     |               |   |
+        \\+ + + +-+ +-+ +-+-+-+-+-+-+ +-+-+
+        \\| | | |     | |           |   | |
+        \\+ + + +-+ +-+ + +-+-+-+-+ +-+ + +
+        \\| | | |     | |     |     | |   |
+        \\+ + + +-+ +-+ +-+-+ +-+ + + + + +
+        \\| | | |     | | |   |   | |   | |
+        \\+ + + + +-+-+ + + +-+ + +-+ +-+ +
+        \\| | | |           |   | |       |
+        \\+ + + +-+-+-+ +-+-+ + +-+ +-+ +-+
+        \\| | | |   |   |     | |         |
+        \\+ + + + + +-+ + + + +-+ +-+-+ +-+
+        \\| | | | | |   |   | |     | |   |
+        \\+ + + + + + +-+ +-+-+ +-+-+ +-+ +
+        \\| | | | |   |     |     |     | |
+        \\+ + + + +-+-+ +-+-+ +-+-+ +-+ + +
+        \\| | | | | |     |     |     | | |
+        \\+ + + + + + +-+-+ +-+-+ + +-+ + +
+        \\| | | | |     |     |   |   | | |
+        \\+ + + + + +-+-+ +-+-+ +-+-+ + + +
+        \\| | | |     |     |     |   | | |
+        \\+ + + + +-+-+ +-+-+ +-+ + + + + +
+        \\| | | | | |     |     |   | | | |
+        \\+ + + +-+ +-+ +-+ + + + + + + + +
+        \\| | | |     |     | |   |   | | |
+        \\+ + + + +-+ +-+-+-+-+-+-+-+ + + +
+        \\| |       |                 |   |
+        \\.-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ;
+    pub const japan2013 =
+        \\+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        \\|   |                       |   |
+        \\+ +-+ +-+-+-+-+-+-+-+-+-+ + + + +
+        \\|     |                 | | | | |
+        \\+ +-+-+ + +-+-+-+-+-+-+ +-+ + + +
+        \\|   |   | |         |     |   | |
+        \\+ +-+ +-+ + +-+ +-+ +-+-+ +-+-+ +
+        \\| |       | |     | |   |     | |
+        \\+ +-+ +-+-+ +-+ +-+ + + + +-+ + +
+        \\| |     |   |     |   | | |   | |
+        \\+ +-+ +-+ +-+-+ +-+-+-+ + +-+ + +
+        \\| |     |   |     |   | |   | | |
+        \\+ + +-+ +-+ +-+ +-+ + + +-+ + + +
+        \\| |       | |       | |   | | | |
+        \\+ + +-+-+ + +-+ +-+-+ +-+ + + + +
+        \\| |     | |   |   |   | | | | | |
+        \\+ +-+-+ + +-+ + + + +-+ + + + + +
+        \\| |     | |   |   |   |   | | | |
+        \\+ + +-+-+ + +-+-+-+-+ +-+ + + + +
+        \\| |     |     |   |   |   | | | |
+        \\+ +-+-+ +-+-+ + + + +-+ +-+ + + +
+        \\| |     |   |   |   | | |   | | |
+        \\+ + +-+-+ + +-+-+-+-+ + +-+ + + +
+        \\| |       | |       |   |   | | |
+        \\+ + +-+-+-+ + + +-+ +-+ + +-+ + +
+        \\| |   |   |   |     |   | | | | |
+        \\+ + + + + +-+-+-+-+ + +-+ + + + +
+        \\| | |   |     |   |     | |   | |
+        \\+ + +-+-+ + +-+ + +-+-+ + + +-+ +
+        \\| | | | | |     |         | |   |
+        \\+ + + + +-+-+-+-+-+-+-+-+-+ +-+ +
         \\| |                             |
         \\.-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     ;

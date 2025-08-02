@@ -1,25 +1,28 @@
 # azem
 
 > [!WARNING]
-> this project is currently WIP.
+> this project is in alpha and very much a WIP.
 > expect memory leaks, inconsistencies, and missing features.
 >
-> initial goals revolve around micromouse simulation, enabling other simulation options via extensions and enhanced api is planned.
+> initial goals revolve around micromouse simulation, maze solving algorithm testing, benchmarking
+>
+> enabling other simulation options via extensions and enhanced api is planned.
 
 > [!TIP]
 > you can try azem in your web browser now!
 >
 > go to [thuvasooriya.me/azem](https://thuvasooriya.me/azem)
 
-<img src="https://i.imgur.com/pypv09P.png" alt="azem running in macos native build" width="500">
+<img src="https://i.imgur.com/QKS7g1v.png" alt="azem running in macos native build" width="500">
 
 ## getting started
 
-it's zig so you know the drill.
+it's zig.
+you know the drill.
 
 ```bash
-git clone https://github.com/thuvasooriya/azem.git
-cd azem
+git clone https://github.com/thuvasooriya/azem.git && cd azem
+
 zig build # will build for your platform and run the exe
 
 zig build web # to run on web browser! yeah i know awesome right
@@ -35,21 +38,20 @@ much of the initial app architectural decisions were also inspired from [pixi](h
 the architecture is constantly evolving. this is almost the 4th rewrite of this application. this will evolve with dvui and zig so don't expect a finish line anytime soon.
 
 > [!TIP]
-> yeah if you haven't figured already, azem is just the letter `m` on the word "maze" cycled to the back.
+> if you haven't figured already, azem is just the letter `m` on the word "maze" cycled to the back. i'm still not sure how i want to pronounce it, will get back on that.
 
 ## plan
 
 ### next
 
-- [ ] render mouse
 - [ ] render detailed maze: numbering, detected, goal
-- [ ] stats : time, speed
-- [ ] test wall following
 - [ ] reorganize azem theme to be modular and extensible
-- [ ] implement settings struct
-- [ ] keyboard navigation
-- [ ] build wasm with github actions instead of having it in the repo
+- [ ] implement settings
+- [ ] render mouse
+- [ ] introduce wall following
+- [ ] stats : time, speed
 - [ ] introduce better algorithms
+- [ ] don't trigger github action when src files/index.html are not changed
 - [ ] brainstorm
   - [ ] input and output files
     - [ ] maze text files
@@ -65,12 +67,17 @@ the architecture is constantly evolving. this is almost the 4th rewrite of this 
   - [ ] simulate sensor inputs
   - [ ] remote debugging with actual mc and sensors
 - [ ] optimizations
-  - [ ] embedded jetbrains fonts are taking up almost all of the executable size.
+  - [ ] try to utilize browser fonts instead of embedding fonts in web build
+  - [ ] better keyboard navigation
   - [ ] optimize in memory representations
 - [ ] app packaging for mac
 - [ ] windows packaging?
 - [ ] incremental, hot reloading with algorithms
 - [ ] set up donations
+
+- [ ] moving popup windows have undefined behavior when going through title bar
+- [ ] how to make truely native multiple windows
+- [ ] adding native float window attribute on macos
 
 ### done
 

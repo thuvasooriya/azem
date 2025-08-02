@@ -1,6 +1,6 @@
 .{
     .name = .azem,
-    .version = "0.0.13",
+    .version = "0.0.14",
     .fingerprint = 0xd03120fbf74d1c71,
     .minimum_zig_version = "0.14.0",
     .dependencies = .{

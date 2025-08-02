@@ -10,7 +10,8 @@ const Maze = azem.Maze;
 arena: std.heap.ArenaAllocator,
 allocator: std.mem.Allocator,
 
-var cached_mazes: ?[3]Maze.DVUIMazeData = null;
+const maze_names = Maze.Examples.maze_names;
+var cached_mazes: ?[10]Maze.DVUIMazeData = null;
 var console_state: ?ConsoleState = null;
 var pane_state: ?PaneState = null;
 
@@ -34,6 +35,7 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
     scaler.deinit();
 
     const pane_state_ptr = getPaneState(eng.allocator);
+    cached_mazes = cached_mazes orelse try Maze.Examples.getExampleMazes(eng.allocator);
 
     var sidebar_paned = dvui.paned(@src(), .{
         .direction = .horizontal,
@@ -97,8 +99,6 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
     return .ok;
 }
 
-const maze_names = [_][]const u8{ "APEC 2018", "APEC 2017", "JAPAN 2017" };
-
 pub fn maze_layout() !void {
     const vbox = dvui.box(@src(), .{ .dir = .vertical }, .{
         .expand = .both,
@@ -117,18 +117,11 @@ pub fn maze_layout() !void {
     const global_maze_id: dvui.WidgetId = @enumFromInt(@as(u64, @bitCast([8]u8{ 'm', 'a', 'z', 'e', '_', 'i', 'd', 0 })));
     const selected_maze = dvui.dataGetPtrDefault(null, global_maze_id, "selected_maze", usize, 0);
 
-    const temp_allocator = std.heap.page_allocator;
-    const example_mazes = getExampleMazes(temp_allocator) catch |err| {
-        var error_text = dvui.textLayout(@src(), .{}, .{ .color_text = .fromColor(azem.thm.color_error) });
-        error_text.format("error loading maze: {}", .{err}, .{});
-        error_text.deinit();
-        return;
-    };
     const console = getConsoleState(std.heap.page_allocator);
     const pane_state_ptr = getPaneState(std.heap.page_allocator);
 
-    const maze_index = if (selected_maze.* >= example_mazes.len) 0 else selected_maze.*;
-    const current_maze = &example_mazes[maze_index];
+    const maze_index = if (selected_maze.* >= cached_mazes.?.len) 0 else selected_maze.*;
+    const current_maze = &cached_mazes.?[maze_index];
 
     const grid_size: comptime_int = 16;
     const box_rect = maze_box.data().rectScale().r;
@@ -144,11 +137,8 @@ pub fn maze_layout() !void {
     const grid_color = azem.colors.overlay0.opacity(0.18);
     const grid_thickness: f32 = cell_size * 0.07;
     for (0..grid_size) |i| {
-        // Vertical
         const x = start_x + @as(f32, @floatFromInt(i)) * cell_size;
         dvui.Path.stroke(.{ .points = &.{ .{ .x = x, .y = start_y }, .{ .x = x, .y = start_y + total_size } } }, .{ .thickness = grid_thickness, .color = grid_color });
-
-        // Horizontal
         const y = start_y + @as(f32, @floatFromInt(i)) * cell_size;
         dvui.Path.stroke(.{ .points = &.{ .{ .x = start_x, .y = y }, .{ .x = start_x + total_size, .y = y } } }, .{ .thickness = grid_thickness, .color = grid_color });
     }
@@ -455,19 +445,6 @@ pub fn sidebar_layout() !void {
 
     _ = dvui.spacer(@src(), .{ .expand = .vertical });
 
-    const label = if (dvui.Examples.show_demo_window) "hide demo" else "show demo";
-    if (dvui.button(@src(), label, .{}, .{
-        .tag = "show-demo-btn",
-        .expand = .horizontal,
-    })) {
-        dvui.Examples.show_demo_window = !dvui.Examples.show_demo_window;
-        console.addMessage(.info, "dvui demo window {s}", .{if (dvui.Examples.show_demo_window) "shown" else "hidden"}) catch {};
-    }
-
-    if (dvui.Examples.show_demo_window) {
-        dvui.Examples.demo();
-    }
-
     const btn_opts: dvui.Options = .{ .expand = .horizontal };
     if (dvui.button(@src(), "start solving", .{}, btn_opts)) {
         console.addMessage(.success, "maze solving algorithm started!", .{}) catch {};
@@ -537,13 +514,6 @@ fn getPaneState(allocator: std.mem.Allocator) *PaneState {
         pane_state = PaneState.init(allocator);
     }
     return &pane_state.?;
-}
-
-fn getExampleMazes(allocator: std.mem.Allocator) ![3]Maze.DVUIMazeData {
-    if (cached_mazes) |mazes| return mazes;
-
-    cached_mazes = try Maze.Examples.getExampleMazes(allocator);
-    return cached_mazes.?;
 }
 
 const ConsoleMessage = struct {

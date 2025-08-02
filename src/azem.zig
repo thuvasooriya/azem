@@ -1,11 +1,3 @@
-// FIXME:
-// menu items inconsistent highlights (use of accent in highlight)
-// menu item highlight persists after mouse movement
-// moving popup windows have undefined behavior when going through title bar
-// how to make truely native multiple windows
-// adding native float window attribute on macos
-// consistent margins when collapsing
-
 const std = @import("std");
 
 const dvui = @import("dvui");
@@ -13,7 +5,7 @@ const dvui = @import("dvui");
 pub const version: std.SemanticVersion = .{
     .major = 0,
     .minor = 1,
-    .patch = 3,
+    .patch = 4,
 };
 
 // modules

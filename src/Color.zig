@@ -10,7 +10,6 @@ a: u8 = 0xff,
 
 pub const Palettes = struct {
     pub const CatppuccinMocha = struct {
-        // Base colors
         pub const rosewater = dvui.Color.fromHex("#f5e0dc");
         pub const flamingo = dvui.Color.fromHex("#f2cdcd");
         pub const pink = dvui.Color.fromHex("#f5c2e7");
@@ -26,7 +25,6 @@ pub const Palettes = struct {
         pub const blue = dvui.Color.fromHex("#89b4fa");
         pub const lavender = dvui.Color.fromHex("#b4befe");
 
-        // Surface colors
         pub const text = dvui.Color.fromHex("#cdd6f4");
         pub const subtext1 = dvui.Color.fromHex("#bac2de");
         pub const subtext0 = dvui.Color.fromHex("#a6adc8");
@@ -88,7 +86,7 @@ pub const Palettes = struct {
     };
 };
 
-/// Returns normalized RGBA components as floats (0.0 - 1.0)
+/// returns normalized RGBA components as floats (0.0 - 1.0)
 pub fn toNormalizedRGBA(color: dvui.Color) struct { r: f32, g: f32, b: f32, a: f32 } {
     return .{
         .r = @as(f32, @floatFromInt(color.r)) / 255.0,
@@ -98,7 +96,7 @@ pub fn toNormalizedRGBA(color: dvui.Color) struct { r: f32, g: f32, b: f32, a: f
     };
 }
 
-/// Returns normalized RGB components as floats (0.0 - 1.0), ignoring alpha
+/// returns normalized RGB components as floats (0.0 - 1.0), ignoring alpha
 pub fn toNormalizedRGB(color: dvui.Color) struct { r: f32, g: f32, b: f32 } {
     return .{
         .r = @as(f32, @floatFromInt(color.r)) / 255.0,

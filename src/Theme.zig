@@ -4,8 +4,10 @@ const dvui = @import("dvui");
 const azem = @import("azem.zig");
 const objc = @import("objc");
 
-const jbm_regular_ttf = @embedFile("fonts/JetBrainsMonoNLNerdFont-Regular.ttf");
-const jbm_bold_ttf = @embedFile("fonts/JetBrainsMonoNLNerdFont-Bold.ttf");
+const font1 = "JetBrainsMono-VariableFont_wght";
+const font1italic = "JetBrainsMono-Italic-VariableFont_wght";
+const jbm_ttf = @embedFile("fonts/" ++ font1 ++ ".ttf");
+const jbm_italic_ttf = @embedFile("fonts/" ++ font1italic ++ ".ttf");
 
 const Theme = @This();
 const App = azem.App;
@@ -53,8 +55,8 @@ app: *App = undefined,
 pub fn init(
     app: *App,
 ) !Theme {
-    dvui.addFont("JetBrainsMono", jbm_regular_ttf, null) catch {};
-    dvui.addFont("JetBrainsMonoBold", jbm_bold_ttf, null) catch {};
+    dvui.addFont(font1, jbm_ttf, null) catch {};
+    dvui.addFont(font1italic, jbm_italic_ttf, null) catch {};
 
     var thm: Theme = .{
         .allocator = app.allocator,
@@ -77,7 +79,6 @@ pub fn init(
         .color_maze_walls = azem.colors.peach.opacity(0.7),
 
         .size_font = 16,
-        // .size_handle = 2,
         .size_gap_panel = 10,
 
         .size_padding_panel = .all(10),
@@ -117,16 +118,15 @@ pub fn set(
     theme.color_accent = thm.color_accent;
     theme.color_err = thm.color_error;
 
-    theme.font_body = .{ .id = .fromName("JetBrainsMono"), .size = thm.size_font };
-    theme.font_caption = .{ .id = .fromName("JetBrainsMono"), .size = (thm.size_font - 2) };
-    theme.font_title = .{ .id = .fromName("JetBrainsMono"), .size = (thm.size_font - 1) };
-    theme.font_title_1 = .{ .id = .fromName("JetBrainsMonoBold"), .size = (thm.size_font + 1) };
-    theme.font_title_2 = .{ .id = .fromName("JetBrainsMonoBold"), .size = thm.size_font };
-    theme.font_title_3 = .{ .id = .fromName("JetBrainsMonoBold"), .size = (thm.size_font - 1) };
-    theme.font_heading = .{ .id = .fromName("JetBrainsMonoBold"), .size = (thm.size_font - 1) };
-    theme.font_title_4 = .{ .id = .fromName("JetBrainsMonoBold"), .size = (thm.size_font - 2) };
+    theme.font_body = .{ .id = .fromName(font1), .size = thm.size_font };
+    theme.font_caption = .{ .id = .fromName(font1italic), .size = (thm.size_font - 2) };
+    theme.font_title = .{ .id = .fromName(font1), .size = (thm.size_font - 1) };
+    theme.font_title_1 = .{ .id = .fromName(font1), .size = (thm.size_font + 1) };
+    theme.font_title_2 = .{ .id = .fromName(font1), .size = thm.size_font };
+    theme.font_title_3 = .{ .id = .fromName(font1), .size = (thm.size_font - 1) };
+    theme.font_heading = .{ .id = .fromName(font1), .size = (thm.size_font - 1) };
+    theme.font_title_4 = .{ .id = .fromName(font1italic), .size = (thm.size_font - 2) };
 
-    // background layers
     setTitlebarColor(app.window, theme.color_fill);
     dvui.themeSet(theme);
 }
