@@ -482,39 +482,37 @@ pub fn sidebar_layout() !void {
         console.addMessage(.info, "single step executed", .{}) catch {};
     }
 
-    // FIXME: pane_state functions not working inside sidebar_layout()
+    if (pane_state_ptr.isSidebarOnly()) {
+        var tooltip: dvui.FloatingTooltipWidget = .init(@src(), .{
+            .active_rect = vbox.data().borderRectScale().r,
+            .interactive = true,
+            .position = .sticky,
+        }, .{
+            .background = true,
+        });
+        defer tooltip.deinit();
 
-     if (pane_state_ptr.isSidebarOnly()) {
-         var tooltip: dvui.FloatingTooltipWidget = .init(@src(), .{
-             .active_rect = vbox.data().borderRectScale().r,
-             .interactive = true,
-             .position = .sticky,
-         }, .{
-             .background = true,
-         });
-         defer tooltip.deinit();
-    
-         if (tooltip.shown()) {
-             var animator = dvui.animate(@src(), .{ .kind = .alpha, .duration = 250_000 }, .{ .expand = .both });
-             defer animator.deinit();
-    
-             var controls_box = dvui.box(@src(), .{ .dir = .vertical }, .{
-                 .expand = .both,
-             });
-             defer controls_box.deinit();
-    
-             if (dvui.button(@src(), "show maze/console", .{}, .{
-                 .expand = .horizontal,
-                 .min_size_content = .{ .h = 16 },
-                 .color_fill = .fromColor(azem.colors.peach.opacity(0.3)),
-                 .corner_radius = .all(4),
-                 .font_style = .caption,
-             })) {
-                 pane_state_ptr.switchToMaze();
-                 console.addMessage(.info, "switched to maze/console", .{}) catch {};
-             }
-         }
-     }
+        if (tooltip.shown()) {
+            var animator = dvui.animate(@src(), .{ .kind = .alpha, .duration = 250_000 }, .{ .expand = .both });
+            defer animator.deinit();
+
+            var controls_box = dvui.box(@src(), .{ .dir = .vertical }, .{
+                .expand = .both,
+            });
+            defer controls_box.deinit();
+
+            if (dvui.button(@src(), "show maze/console", .{}, .{
+                .expand = .horizontal,
+                .min_size_content = .{ .h = 16 },
+                .color_fill = .fromColor(azem.colors.peach.opacity(0.3)),
+                .corner_radius = .all(4),
+                .font_style = .caption,
+            })) {
+                pane_state_ptr.switchToMaze();
+                console.addMessage(.info, "switched to maze/console", .{}) catch {};
+            }
+        }
+    }
 }
 
 pub fn deinit(eng: *Engine) !void {

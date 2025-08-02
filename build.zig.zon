@@ -18,6 +18,8 @@
     .paths = .{
         "assets",
         "src",
+        "docs",
+        "tools",
         "build.zig",
         "build.zig.zon",
         "readme.md",
