@@ -1,22 +1,17 @@
 # azem
 
-a cool multiplatform maze simulator written in zig.
+> [!WARNING]
+> this project is currently WIP.
+> expect memory leaks, inconsistencies, and missing features.
+>
+> initial goals revolve around micromouse simulation, enabling other simulation options via extensions and enhanced api is planned.
 
-initial goals are micromouse simulation, expanding to other simulation options is planned.
+> [!TIP]
+> you can try azem in your web browser now!
+>
+> go to [thuvasooriya.me/azem](https://thuvasooriya.me/azem)
 
-here is how it looks currently
-
-![azem running in macos](https://i.imgur.com/pypv09P.png)
-
-## why
-
-i'm a very openionated person, that's one of the reasons i love open-source. if something is itchy, then you can go break some stuff. when i'm trying the mms simulator (which is awesome and props to mack for providing executables for all platforms, god what a legend), i wanted to make some changes to make my experience a bit better and add some additional sim capabilities. then much to my disappointment, i found out it uses qt for the gui. hmm... (long pause and a deep sigh). i went through the internet to find ways to build the project easily on my mac and dear lord... i already knew about the qt/cpp build ecosystem problem because of some other things i tried to fiddle with before. combined with the licensing of qt i just couldn't.
-
-another smoldering fire that was burning in me was to try the zig language which i was learning at the time of the project's inception, in a potentially usefull and cool application. and with many other motivations, azem was born.
-
-> yeah if you haven't figured already, azem is just the letter `m` on the word "maze" cycled to the back.
-
-initially i didn't have much time, i just had a rough idea about what i wanted to do. i just yoinked the gui layout idea from mms and tried to recreate it with dvui in zig. went well to be honest. and rendering the maze with raylib was very cool. now SDL3 backend is being used because of some limitations of raylib backend. much of app architectural decisions were also inspired from [pixi](https://github.com/foxnne/pixi/tree/dvui) (another awesome zig project by an awesome person currently being migrated to dvui). this is almost the 4th rewrite of this application. this will evolve with dvui and zig so don't expect a finished product anytime soon.
+<img src="https://i.imgur.com/pypv09P.png" alt="azem running in macos native build" width="500">
 
 ## getting started
 
@@ -30,74 +25,65 @@ zig build # will build for your platform and run the exe
 zig build web # to run on web browser! yeah i know awesome right
 ```
 
+## why
+
+i'm a **very** openionated person, that's one of the reasons i love open-source. if something is itchy, then you can go break some stuff. when i was trying out [mms simulator](https://github.com/mackorone/mms) (which is awesome and props to mack for providing executables for all platforms, god what a legend), i wanted to make some changes. then i found out it uses qt for the gui. hmm... (long pause and a deep sigh). cpp i can bite down but qt... i just couldn't.
+
+aktually... i wanted to try doing something cool in zig language. so here we are.
+
+much of the initial app architectural decisions were also inspired from [pixi](https://github.com/foxnne/pixi/tree/dvui) (another awesome zig project by an awesome person).
+the architecture is constantly evolving. this is almost the 4th rewrite of this application. this will evolve with dvui and zig so don't expect a finish line anytime soon.
+
+> [!TIP]
+> yeah if you haven't figured already, azem is just the letter `m` on the word "maze" cycled to the back.
+
 ## plan
+
+### next
+
+- [ ] render mouse
+- [ ] render detailed maze: numbering, detected, goal
+- [ ] stats : time, speed
+- [ ] test wall following
+- [ ] reorganize azem theme to be modular and extensible
+- [ ] implement settings struct
+- [ ] keyboard navigation
+- [ ] build wasm with github actions instead of having it in the repo
+- [ ] loading indication in index.html when wasm is being pulled
+- [ ] introduce better algorithms
+- [ ] brainstorm
+  - [ ] input and output files
+    - [ ] maze text files
+    - [ ] compressed representations?
+  - [ ] file management dependency
+  - [ ] mms compatibile api
+  - [ ] better debugging during mouse run
+  - [ ] accurate simulation params
+    - [ ] turn rate
+    - [ ] slip
+    - [ ] disturbances
+    - [ ] sensor errors
+  - [ ] simulate sensor inputs
+  - [ ] remote debugging with actual mc and sensors
+- [ ] optimizations
+  - [ ] embedded jetbrains fonts are taking up almost all of the executable size.
+  - [ ] optimize in memory representations
+- [ ] app packaging for mac
+- [ ] windows packaging?
+- [ ] incremental, hot reloading with algorithms
+- [ ] set up donations
 
 ### done
 
 - [x] basic theme
 - [x] basic maze loading and rendering
-- [x] native and web compatibility
+- [x] native builds (tested in mac)
+- [x] web wasm builds
 - [x] console logging
 
-### next
+## big thanks to
 
-- render mouse
-- test wall following
-- decide on theme structure
-- decide on settings structure
-- when project structure is somewhat ok
-  - implement tests for existing functions
-  - brainstorm the rest and come back
-- stats
-  - [ ] time
-  - [ ] speed
-  - [ ] explored
-- simulate solving algorithms
-- file management dependency
-- mms compatibility mode
-
-### brainstorm
-
-- [x] text representation of maze : + and . taken as corner
-- [ ] understand project structure of pixi and mms
-- first release functionality decide
-- maze design
-- mouse design
-- input and output files
-  - [ ] maze text files
-  - [ ] compressed representations?
-- api
-- better debugging during mouse run
-- proper docs - zig docs and zine
-
-### long time goals
-
-- dod
-  - [ ] optimize in memory representation of maze
-  - [ ] remove heap allocation wherever possible
-- app packaging for mac
-- windows packaging?
-- incremental, hot reloading with algorithms
-- donation
-- github workflows
-- accurate simulation params
-  - [ ] turn rate
-  - [ ] slip
-  - [ ] disturbances
-  - [ ] sensor errors
-- simulate sensor inputs
-- remote debugging with actual mc and sensors
-
-## inspirations
-
-- mms simulator
-- maze solver raylib
-- pixi project structure
-- dvui examples
-
-### big thanks to
-
-- ZSF : zig is godlike (for better or for worse i'm still living off my parents, if you can please go donate them)
-- mackorone : for creating the awesome piece of software that is mms
-- david-vanderson : dvui is awesome
-- foxnne : pixi codebase rocks
+- [ZSF : zig is super awesome](https://ziglang.org/zsf/) (for better or for worse i'm still living off my parents, if you can please go [donate them](https://ziglang.org/zsf/))
+- mackorone : for creating the awesome piece of software that is [mms](https://github.com/mackorone/mms)
+- david-vanderson : [dvui is awesome](https://github.com/david-vanderson/dvui) and david can get you out of any tough spot
+- [foxnne : pixi codebase rocks](https://github.com/foxnne/pixi/tree/dvui)
