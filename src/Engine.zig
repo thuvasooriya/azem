@@ -16,6 +16,15 @@ var cached_mazes: ?[10]Maze.DVUIMazeData = null;
 var console_state: ?ConsoleState = null;
 var pane_state: ?PaneState = null;
 var solver_state: ?SolverAppState = null;
+var frame_counter: u64 = 0;
+
+fn getTimeMs() i64 {
+    if (dvui.backend.kind == .web) {
+        return @intCast(frame_counter);
+    } else {
+        return std.time.milliTimestamp();
+    }
+}
 
 pub fn init(app: *App) !Engine {
     return Engine{
@@ -25,6 +34,10 @@ pub fn init(app: *App) !Engine {
 }
 
 pub fn tick(eng: *Engine) !dvui.App.Result {
+    if (dvui.backend.kind == .web) {
+        frame_counter += 1;
+    }
+
     var scaler = dvui.scale(@src(), .{
         .scale = &dvui.currentWindow().content_scale,
         .pinch_zoom = .global,
@@ -41,7 +54,7 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
 
     const solver_state_ptr = getSolverState(eng.allocator);
     if (solver_state_ptr.is_running) {
-        const current_time = std.time.milliTimestamp();
+        const current_time = getTimeMs();
         if (current_time - solver_state_ptr.last_step_time >= solver_state_ptr.step_interval_ms) {
             if (solver_state_ptr.step()) |result| {
                 solver_state_ptr.last_step_time = current_time;
