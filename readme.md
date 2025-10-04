@@ -69,7 +69,10 @@ the architecture is constantly evolving. this is almost the 4th rewrite of this 
 - [ ] optimizations
   - [ ] try to utilize browser fonts instead of embedding fonts in web build
   - [ ] better keyboard navigation
+  - [ ] proper snappy animations
   - [ ] optimize in memory representations
+  - [ ] intuitive ui/ux
+    - [ ] no need to show maze name if sidebar is not collapsed
 - [ ] app packaging for mac
 - [ ] windows packaging?
 - [ ] incremental, hot reloading with algorithms

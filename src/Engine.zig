@@ -101,7 +101,7 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
 
 pub fn maze_layout() !void {
     const vbox = dvui.box(@src(), .{ .dir = .vertical }, .{
-        .expand = .both,
+        .expand = .ratio,
         .background = true,
         .padding = azem.thm.size_padding_panel,
         .color_fill = .fromColor(azem.thm.color_fill_panel),
@@ -181,17 +181,19 @@ pub fn maze_layout() !void {
         }
     }
 
-    var info_layout = dvui.textLayout(@src(), .{}, .{
-        .font_style = .title_4,
-        .gravity_x = 0.5,
-        .background = true,
-        .color_fill = .fromColor(azem.thm.color_fill_window.opacity(0.7)),
-        .color_text = .fromColor(azem.colors.peach),
-        .padding = .{ .x = 8, .y = 4, .w = 8, .h = 4 },
-        .corner_radius = .{ .x = 4, .y = 4, .w = 4, .h = 4 },
-    });
-    info_layout.format("{s}", .{current_maze.name}, .{});
-    info_layout.deinit();
+    if (pane_state_ptr.isSidebarCollapsed()) {
+        var info_layout = dvui.textLayout(@src(), .{}, .{
+            .font_style = .title_4,
+            .gravity_x = 0.5,
+            .background = true,
+            .color_fill = .fromColor(azem.thm.color_fill_window.opacity(0.7)),
+            .color_text = .fromColor(azem.colors.peach),
+            .padding = .{ .x = 8, .y = 4, .w = 8, .h = 4 },
+            .corner_radius = .{ .x = 4, .y = 4, .w = 4, .h = 4 },
+        });
+        info_layout.format("{s}", .{current_maze.name}, .{});
+        info_layout.deinit();
+    }
 
     if (pane_state_ptr.isSidebarCollapsed() or pane_state_ptr.isConsoleCollapsed()) {
         var tooltip: dvui.FloatingTooltipWidget = .init(@src(), .{
@@ -291,26 +293,31 @@ pub fn console_layout() !void {
                 });
                 defer msg_box.deinit();
 
-                var timestamp_buffer: [64]u8 = undefined;
-                const timestamp_str = ConsoleState.formatTimestamp(msg.timestamp, &timestamp_buffer) catch "???";
+                switch (dvui.backend.kind) {
+                    .web => {},
+                    else => {
+                        var timestamp_buffer: [64]u8 = undefined;
+                        const timestamp_str = ConsoleState.formatTimestamp(msg.timestamp, &timestamp_buffer) catch "???";
 
-                var timestamp_text = dvui.textLayout(@src(), .{}, .{
-                    .font_style = .caption,
-                    .color_text = .fromColor(azem.colors.overlay1),
-                    .min_size_content = .{ .w = 50 },
-                    .background = false,
-                });
-                timestamp_text.format("{s}", .{timestamp_str}, .{});
-                timestamp_text.deinit();
+                        var timestamp_text = dvui.textLayout(@src(), .{}, .{
+                            .font_style = .body,
+                            .color_text = .fromColor(azem.colors.overlay1),
+                            .min_size_content = .{ .w = 50 },
+                            .background = false,
+                        });
+                        timestamp_text.format("{s}", .{timestamp_str}, .{});
+                        timestamp_text.deinit();
+                    },
+                }
 
-                var prefix_text = dvui.textLayout(@src(), .{}, .{
-                    .font_style = .body,
-                    .color_text = .fromColor(msg.level.getColor()),
-                    .min_size_content = .{ .w = 20 },
-                    .background = false,
-                });
-                prefix_text.format("{s}", .{msg.level.getPrefix()}, .{});
-                prefix_text.deinit();
+                // var prefix_text = dvui.textLayout(@src(), .{}, .{
+                //     .font_style = .body,
+                //     .color_text = .fromColor(msg.level.getColor()),
+                //     .min_size_content = .{ .w = 20 },
+                //     .background = false,
+                // });
+                // prefix_text.format("{s}", .{msg.level.getPrefix()}, .{});
+                // prefix_text.deinit();
 
                 var content_text = dvui.textLayout(@src(), .{}, .{
                     .font_style = .body,
@@ -536,14 +543,14 @@ const ConsoleMessage = struct {
             };
         }
 
-        pub fn getPrefix(self: MessageLevel) []const u8 {
-            return switch (self) {
-                .info => "[i]",
-                .success => "[✓]",
-                .warning => "[!]",
-                .err => "[✗]",
-            };
-        }
+        // pub fn getPrefix(self: MessageLevel) []const u8 {
+        //     return switch (self) {
+        //         .info => "[i]",
+        //         .success => "[s]",
+        //         .warning => "[!]",
+        //         .err => "[e]",
+        //     };
+        // }
     };
 };
 
