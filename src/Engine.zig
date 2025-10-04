@@ -5,6 +5,7 @@ const azem = @import("azem.zig");
 const App = azem.App;
 const Engine = @This();
 const Maze = azem.Maze;
+const Solver = @import("Solver.zig");
 
 /// this arena is for small per-frame editor allocations
 arena: std.heap.ArenaAllocator,
@@ -14,6 +15,7 @@ const maze_names = Maze.Examples.maze_names;
 var cached_mazes: ?[10]Maze.DVUIMazeData = null;
 var console_state: ?ConsoleState = null;
 var pane_state: ?PaneState = null;
+var solver_state: ?SolverAppState = null;
 
 pub fn init(app: *App) !Engine {
     return Engine{
@@ -36,6 +38,33 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
 
     const pane_state_ptr = getPaneState(eng.allocator);
     cached_mazes = cached_mazes orelse try Maze.Examples.getExampleMazes(eng.allocator);
+
+    const solver_state_ptr = getSolverState(eng.allocator);
+    if (solver_state_ptr.is_running) {
+        const current_time = std.time.milliTimestamp();
+        if (current_time - solver_state_ptr.last_step_time >= solver_state_ptr.step_interval_ms) {
+            if (solver_state_ptr.step()) |result| {
+                solver_state_ptr.last_step_time = current_time;
+                switch (result) {
+                    .running => {},
+                    .found => {
+                        solver_state_ptr.is_running = false;
+                        const console = getConsoleState(eng.allocator);
+                        console.addMessage(.success, "path found!", .{}) catch {};
+                    },
+                    .no_path => {
+                        solver_state_ptr.is_running = false;
+                        const console = getConsoleState(eng.allocator);
+                        console.addMessage(.warning, "no path exists", .{}) catch {};
+                    },
+                }
+            } else |_| {
+                solver_state_ptr.is_running = false;
+            }
+        }
+        const solver_refresh_id: dvui.Id = @enumFromInt(@as(u64, @bitCast([8]u8{ 's', 'o', 'l', 'v', 'e', '_', 'i', 'd' })));
+        dvui.refresh(null, @src(), solver_refresh_id);
+    }
 
     var sidebar_paned = dvui.paned(@src(), .{
         .direction = .horizontal,
@@ -143,6 +172,57 @@ pub fn maze_layout() !void {
         dvui.Path.stroke(.{ .points = &.{ .{ .x = start_x, .y = y }, .{ .x = start_x + total_size, .y = y } } }, .{ .thickness = grid_thickness, .color = grid_color });
     }
 
+    const solver_state_ptr = getSolverState(std.heap.page_allocator);
+    if (solver_state_ptr.solver) |*solver| {
+        const state = solver.getState();
+        for (0..16) |row_idx| {
+            for (0..16) |col_idx| {
+                const pos = Solver.Position{ .x = @intCast(col_idx), .y = @intCast(row_idx) };
+                const cell_state = state.getCellState(pos);
+                const cell_x = start_x + @as(f32, @floatFromInt(col_idx)) * cell_size;
+                const cell_y = start_y + @as(f32, @floatFromInt(row_idx)) * cell_size;
+
+                const fill_color: ?dvui.Color = switch (cell_state) {
+                    .unvisited => null,
+                    .frontier => azem.colors.yellow.opacity(0.3),
+                    .visited => azem.colors.blue.opacity(0.2),
+                    .path => azem.colors.green.opacity(0.5),
+                };
+
+                if (fill_color) |color| {
+                    const cell_path = dvui.Path{
+                        .points = &.{
+                            .{ .x = cell_x, .y = cell_y },
+                            .{ .x = cell_x + cell_size, .y = cell_y },
+                            .{ .x = cell_x + cell_size, .y = cell_y + cell_size },
+                            .{ .x = cell_x, .y = cell_y + cell_size },
+                        },
+                    };
+                    cell_path.fillConvex(.{ .color = color });
+                }
+            }
+        }
+    }
+
+    const marker_radius = cell_size * 0.3;
+    const start_cell_x = start_x + @as(f32, @floatFromInt(solver_state_ptr.start_pos.x)) * cell_size + cell_size * 0.5;
+    const start_cell_y = start_y + @as(f32, @floatFromInt(solver_state_ptr.start_pos.y)) * cell_size + cell_size * 0.5;
+
+    var start_builder = dvui.Path.Builder.init(std.heap.page_allocator);
+    defer start_builder.deinit();
+    start_builder.addArc(.{ .x = start_cell_x, .y = start_cell_y }, marker_radius, 0, std.math.pi * 2.0, true);
+    const start_circle = start_builder.build();
+    start_circle.fillConvex(.{ .color = azem.colors.green });
+
+    const goal_cell_x = start_x + @as(f32, @floatFromInt(solver_state_ptr.goal_pos.x)) * cell_size + cell_size * 0.5;
+    const goal_cell_y = start_y + @as(f32, @floatFromInt(solver_state_ptr.goal_pos.y)) * cell_size + cell_size * 0.5;
+
+    var goal_builder = dvui.Path.Builder.init(std.heap.page_allocator);
+    defer goal_builder.deinit();
+    goal_builder.addArc(.{ .x = goal_cell_x, .y = goal_cell_y }, marker_radius, 0, std.math.pi * 2.0, true);
+    const goal_circle = goal_builder.build();
+    goal_circle.fillConvex(.{ .color = azem.colors.red });
+
     const wall_color = azem.thm.color_maze_walls;
     const wall_thickness: f32 = @max(2.0, cell_size * 0.08);
 
@@ -177,6 +257,44 @@ pub fn maze_layout() !void {
                     .{ .x = cell_x, .y = cell_y },
                     .{ .x = cell_x, .y = cell_y + cell_size },
                 } }, .{ .thickness = wall_thickness, .color = wall_color });
+            }
+        }
+    }
+
+    if (solver_state_ptr.edit_mode != .none) {
+        const evts = dvui.events();
+        for (evts) |*e| {
+            if (!dvui.eventMatchSimple(e, maze_box.data())) continue;
+
+            if (e.evt == .mouse and e.evt.mouse.action == .press and e.evt.mouse.button.pointer()) {
+                const mx = e.evt.mouse.p.x;
+                const my = e.evt.mouse.p.y;
+
+                if (mx >= start_x and mx <= start_x + total_size and
+                    my >= start_y and my <= start_y + total_size)
+                {
+                    const grid_x: u8 = @intFromFloat(@floor((mx - start_x) / cell_size));
+                    const grid_y: u8 = @intFromFloat(@floor((my - start_y) / cell_size));
+
+                    if (grid_x < 16 and grid_y < 16) {
+                        const new_pos = Solver.Position{ .x = grid_x, .y = grid_y };
+                        switch (solver_state_ptr.edit_mode) {
+                            .setting_start => {
+                                solver_state_ptr.start_pos = new_pos;
+                                solver_state_ptr.edit_mode = .none;
+                                console.addMessage(.success, "start set to ({d},{d})", .{ grid_x, grid_y }) catch {};
+                                e.handled = true;
+                            },
+                            .setting_goal => {
+                                solver_state_ptr.goal_pos = new_pos;
+                                solver_state_ptr.edit_mode = .none;
+                                console.addMessage(.success, "goal set to ({d},{d})", .{ grid_x, grid_y }) catch {};
+                                e.handled = true;
+                            },
+                            .none => {},
+                        }
+                    }
+                }
             }
         }
     }
@@ -452,18 +570,103 @@ pub fn sidebar_layout() !void {
 
     _ = dvui.spacer(@src(), .{ .expand = .vertical });
 
+    var tl3 = dvui.textLayout(@src(), .{}, .{ .font_style = .title_4 });
+    tl3.format("solver algorithm:", .{}, .{});
+    tl3.deinit();
+
+    const solver_state_ptr = getSolverState(std.heap.page_allocator);
+    const algorithm_names = [_][]const u8{ "BFS", "DFS", "A*" };
+    var algorithm_idx: usize = @intFromEnum(solver_state_ptr.algorithm);
+    if (dvui.dropdown(@src(), &algorithm_names, &algorithm_idx, .{
+        .expand = .horizontal,
+        .min_size_content = .{ .h = 30 },
+    })) {
+        solver_state_ptr.algorithm = @enumFromInt(algorithm_idx);
+        console.addMessage(.info, "changed algorithm to {s}", .{algorithm_names[algorithm_idx]}) catch {};
+    }
+
+    _ = dvui.spacer(@src(), .{ .min_size_content = .{ .h = 10 } });
+
+    var tl4 = dvui.textLayout(@src(), .{}, .{ .font_style = .title_4 });
+    tl4.format("positions:", .{}, .{});
+    tl4.deinit();
+
+    {
+        var hbox_positions = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
+        defer hbox_positions.deinit();
+
+        const start_mode_active = solver_state_ptr.edit_mode == .setting_start;
+        if (dvui.button(@src(), "set start", .{}, .{
+            .expand = .horizontal,
+            .color_fill = if (start_mode_active) azem.colors.green.opacity(0.4) else azem.colors.surface1,
+        })) {
+            solver_state_ptr.edit_mode = if (start_mode_active) .none else .setting_start;
+            if (solver_state_ptr.edit_mode == .setting_start) {
+                console.addMessage(.info, "click grid to set start position", .{}) catch {};
+            } else {
+                console.addMessage(.info, "start edit cancelled", .{}) catch {};
+            }
+        }
+
+        const goal_mode_active = solver_state_ptr.edit_mode == .setting_goal;
+        if (dvui.button(@src(), "set goal", .{}, .{
+            .expand = .horizontal,
+            .color_fill = if (goal_mode_active) azem.colors.red.opacity(0.4) else azem.colors.surface1,
+        })) {
+            solver_state_ptr.edit_mode = if (goal_mode_active) .none else .setting_goal;
+            if (solver_state_ptr.edit_mode == .setting_goal) {
+                console.addMessage(.info, "click grid to set goal position", .{}) catch {};
+            } else {
+                console.addMessage(.info, "goal edit cancelled", .{}) catch {};
+            }
+        }
+    }
+
+    _ = dvui.spacer(@src(), .{ .min_size_content = .{ .h = 10 } });
+
     const btn_opts: dvui.Options = .{ .expand = .horizontal };
-    if (dvui.button(@src(), "start solving", .{}, btn_opts)) {
-        console.addMessage(.success, "maze solving algorithm started!", .{}) catch {};
-        console.addMessage(.info, "analyzing maze structure...", .{}) catch {};
+    const maze_index = if (selected_maze.* >= cached_mazes.?.len) 0 else selected_maze.*;
+    const current_maze = &cached_mazes.?[maze_index];
+
+    const play_pause_label = if (solver_state_ptr.is_running) "pause" else if (solver_state_ptr.solver != null) "play" else "start";
+    if (dvui.button(@src(), play_pause_label, .{}, btn_opts)) {
+        if (solver_state_ptr.solver == null) {
+            solver_state_ptr.reset(current_maze) catch {
+                console.addMessage(.err, "failed to initialize solver", .{}) catch {};
+            };
+            console.addMessage(.success, "solver initialized with {s}", .{algorithm_names[algorithm_idx]}) catch {};
+        }
+        solver_state_ptr.toggleRunning();
+        if (solver_state_ptr.is_running) {
+            console.addMessage(.info, "solver running...", .{}) catch {};
+        } else {
+            console.addMessage(.info, "solver paused", .{}) catch {};
+        }
     }
 
     if (dvui.button(@src(), "reset", .{}, btn_opts)) {
-        console.addMessage(.warning, "maze state reset", .{}) catch {};
+        solver_state_ptr.reset(current_maze) catch {
+            console.addMessage(.err, "failed to reset solver", .{}) catch {};
+        };
+        solver_state_ptr.is_running = false;
+        console.addMessage(.warning, "solver reset", .{}) catch {};
     }
 
     if (dvui.button(@src(), "step", .{}, btn_opts)) {
-        console.addMessage(.info, "single step executed", .{}) catch {};
+        if (solver_state_ptr.solver == null) {
+            solver_state_ptr.reset(current_maze) catch {
+                console.addMessage(.err, "failed to initialize solver", .{}) catch {};
+            };
+        }
+        if (solver_state_ptr.step()) |result| {
+            switch (result) {
+                .running => console.addMessage(.info, "step executed", .{}) catch {},
+                .found => console.addMessage(.success, "path found!", .{}) catch {},
+                .no_path => console.addMessage(.warning, "no path exists", .{}) catch {},
+            }
+        } else |_| {
+            console.addMessage(.err, "step failed", .{}) catch {};
+        }
     }
 
     if (pane_state_ptr.isSidebarOnly()) {
@@ -521,6 +724,13 @@ fn getPaneState(allocator: std.mem.Allocator) *PaneState {
         pane_state = PaneState.init(allocator);
     }
     return &pane_state.?;
+}
+
+fn getSolverState(allocator: std.mem.Allocator) *SolverAppState {
+    if (solver_state == null) {
+        solver_state = SolverAppState.init(allocator);
+    }
+    return &solver_state.?;
 }
 
 const ConsoleMessage = struct {
@@ -694,5 +904,56 @@ const PaneState = struct {
 
     pub fn switchToMaze(self: *Self) void {
         self.switch_to_maze = true;
+    }
+};
+
+const SolverAppState = struct {
+    solver: ?Solver.Solver = null,
+    algorithm: Solver.Algorithm = .bfs,
+    start_pos: Solver.Position = .{ .x = 0, .y = 0 },
+    goal_pos: Solver.Position = .{ .x = 15, .y = 15 },
+    is_running: bool = false,
+    step_interval_ms: u64 = 100,
+    last_step_time: i64 = 0,
+    allocator: std.mem.Allocator,
+    edit_mode: EditMode = .none,
+
+    const EditMode = enum {
+        none,
+        setting_start,
+        setting_goal,
+    };
+
+    const Self = @This();
+
+    pub fn init(allocator: std.mem.Allocator) Self {
+        return Self{
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *Self) void {
+        if (self.solver) |*solver| {
+            solver.deinit();
+        }
+    }
+
+    pub fn reset(self: *Self, maze: *const Maze.DVUIMazeData) !void {
+        if (self.solver) |*solver| {
+            solver.deinit();
+        }
+        self.solver = try Solver.Solver.init(self.allocator, self.algorithm, maze, self.start_pos, self.goal_pos);
+        self.is_running = false;
+    }
+
+    pub fn step(self: *Self) !Solver.StepResult {
+        if (self.solver) |*solver| {
+            return try solver.step();
+        }
+        return .no_path;
+    }
+
+    pub fn toggleRunning(self: *Self) void {
+        self.is_running = !self.is_running;
     }
 };
