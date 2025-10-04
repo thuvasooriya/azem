@@ -73,7 +73,7 @@ pub fn main() !void {
     try server_process.spawn();
 
     // give the server a moment to start up
-    std.time.sleep(1 * std.time.ns_per_s);
+    std.Thread.sleep(1 * std.time.ns_per_s);
 
     print("[i] opening browser...\n", .{});
 

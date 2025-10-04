@@ -102,21 +102,21 @@ pub fn set(
     app: *App,
     thm: *Theme,
 ) void {
-    const theme = dvui.themeGet();
+    var theme = dvui.themeGet();
     theme.dark = thm.dark;
     theme.name = thm.name;
-    theme.color_fill = thm.color_background;
-    theme.color_fill_window = thm.color_fill_window;
+    theme.fill = thm.color_background;
+    theme.window.fill = thm.color_fill_window;
 
-    theme.color_text = thm.color_text;
-    theme.color_text_press = thm.color_text;
+    theme.text = thm.color_text;
+    theme.text_press = thm.color_text;
 
-    theme.color_fill_control = thm.color_fill_control;
-    theme.color_fill_hover = thm.color_fill_hover;
-    theme.color_border = thm.color_border;
-    theme.color_fill_press = thm.color_fill_press;
-    theme.color_accent = thm.color_accent;
-    theme.color_err = thm.color_error;
+    theme.control.fill = thm.color_fill_control;
+    theme.fill_hover = thm.color_fill_hover;
+    theme.border = thm.color_border;
+    theme.fill_press = thm.color_fill_press;
+    theme.highlight.fill = thm.color_accent;
+    theme.err.fill = thm.color_error;
 
     theme.font_body = .{ .id = .fromName(font1), .size = thm.size_font };
     theme.font_caption = .{ .id = .fromName(font1italic), .size = (thm.size_font - 2) };
@@ -127,7 +127,7 @@ pub fn set(
     theme.font_heading = .{ .id = .fromName(font1), .size = (thm.size_font - 1) };
     theme.font_title_4 = .{ .id = .fromName(font1italic), .size = (thm.size_font - 2) };
 
-    setTitlebarColor(app.window, theme.color_fill);
+    setTitlebarColor(app.window, theme.fill);
     dvui.themeSet(theme);
 }
 

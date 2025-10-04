@@ -96,13 +96,13 @@ pub fn parseText(text: []const u8, allocator: std.mem.Allocator) !Maze {
     defer arena.deinit();
     const temp_allocator = arena.allocator();
 
-    var lines = std.ArrayList([]const u8).init(temp_allocator);
+    var lines: std.ArrayList([]const u8) = .{};
 
     var line_iter = std.mem.tokenizeAny(u8, text, "\n\r");
     while (line_iter.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t");
         if (trimmed.len > 0) {
-            try lines.append(trimmed);
+            try lines.append(temp_allocator, trimmed);
         }
     }
 

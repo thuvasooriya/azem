@@ -172,9 +172,14 @@ fn handleConnection(allocator: Allocator, connection: std.net.Server.Connection,
     defer connection.stream.close();
 
     var read_buffer: [8192]u8 = undefined;
-    var http_server = std.http.Server.init(connection, &read_buffer);
+    var write_buffer: [8192]u8 = undefined;
 
-    while (http_server.state == .ready) {
+    var reader = connection.stream.reader(&read_buffer);
+    var writer = connection.stream.writer(&write_buffer);
+
+    var http_server = std.http.Server.init(reader.interface(), &writer.interface);
+
+    while (http_server.reader.state == .ready) {
         var request = http_server.receiveHead() catch |err| switch (err) {
             error.HttpConnectionClosing => break,
             else => {

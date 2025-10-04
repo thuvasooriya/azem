@@ -30,7 +30,7 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
         .expand = .both,
         .rect = .cast(dvui.windowRect()),
         .background = true,
-        .color_fill = .fromColor(azem.thm.color_background),
+        .color_fill = azem.thm.color_background,
     });
     scaler.deinit();
 
@@ -104,17 +104,17 @@ pub fn maze_layout() !void {
         .expand = .ratio,
         .background = true,
         .padding = azem.thm.size_padding_panel,
-        .color_fill = .fromColor(azem.thm.color_fill_panel),
+        .color_fill = azem.thm.color_fill_panel,
         .corner_radius = azem.thm.size_corner_radius_panel,
         .border = azem.thm.size_border_panel,
-        .color_border = .fromColor(azem.colors.peach.opacity(0.2)),
+        .color_border = azem.colors.peach.opacity(0.2),
     });
     defer vbox.deinit();
 
     var maze_box = dvui.box(@src(), .{}, .{ .expand = .both });
     defer maze_box.deinit();
 
-    const global_maze_id: dvui.WidgetId = @enumFromInt(@as(u64, @bitCast([8]u8{ 'm', 'a', 'z', 'e', '_', 'i', 'd', 0 })));
+    const global_maze_id: dvui.Id = @enumFromInt(@as(u64, @bitCast([8]u8{ 'm', 'a', 'z', 'e', '_', 'i', 'd', 0 })));
     const selected_maze = dvui.dataGetPtrDefault(null, global_maze_id, "selected_maze", usize, 0);
 
     const console = getConsoleState(std.heap.page_allocator);
@@ -186,8 +186,8 @@ pub fn maze_layout() !void {
             .font_style = .title_4,
             .gravity_x = 0.5,
             .background = true,
-            .color_fill = .fromColor(azem.thm.color_fill_window.opacity(0.7)),
-            .color_text = .fromColor(azem.colors.peach),
+            .color_fill = azem.thm.color_fill_window.opacity(0.7),
+            .color_text = azem.colors.peach,
             .padding = .{ .x = 8, .y = 4, .w = 8, .h = 4 },
             .corner_radius = .{ .x = 4, .y = 4, .w = 4, .h = 4 },
         });
@@ -218,7 +218,7 @@ pub fn maze_layout() !void {
                 if (dvui.button(@src(), "show sidebar", .{}, .{
                     .expand = .horizontal,
                     .min_size_content = .{ .h = 16 },
-                    .color_fill = .fromColor(azem.colors.blue.opacity(0.3)),
+                    .color_fill = azem.colors.blue.opacity(0.3),
                     .corner_radius = .all(4),
                     .font_style = .caption,
                 })) {
@@ -231,7 +231,7 @@ pub fn maze_layout() !void {
                 if (dvui.button(@src(), "show console", .{}, .{
                     .expand = .horizontal,
                     .min_size_content = .{ .h = 16 },
-                    .color_fill = .fromColor(azem.colors.green.opacity(0.3)),
+                    .color_fill = azem.colors.green.opacity(0.3),
                     .corner_radius = .all(4),
                     .font_style = .caption,
                 })) {
@@ -248,10 +248,10 @@ pub fn console_layout() !void {
         .expand = .both,
         .background = true,
         .padding = azem.thm.size_padding_panel,
-        .color_fill = .fromColor(azem.thm.color_fill_panel),
+        .color_fill = azem.thm.color_fill_panel,
         .corner_radius = azem.thm.size_corner_radius_panel,
         .border = azem.thm.size_border_panel,
-        .color_border = .fromColor(azem.colors.green.opacity(0.2)),
+        .color_border = azem.colors.green.opacity(0.2),
     });
     defer vbox.deinit();
 
@@ -271,7 +271,7 @@ pub fn console_layout() !void {
         if (console.messages.items.len == 0) {
             var empty_text = dvui.textLayout(@src(), .{}, .{
                 .font_style = .body,
-                .color_text = .fromColor(azem.colors.overlay0),
+                .color_text = azem.colors.overlay0,
                 .gravity_x = 0.5,
                 .gravity_y = 0.5,
                 .expand = .both,
@@ -285,7 +285,7 @@ pub fn console_layout() !void {
                     .expand = .horizontal,
                     .background = (i % 2 == 0),
                     .color_fill = if (i % 2 == 0)
-                        .fromColor(azem.colors.surface0.opacity(0.4))
+                        azem.colors.surface0.opacity(0.4)
                     else
                         undefined,
                     .corner_radius = .all(4),
@@ -301,7 +301,7 @@ pub fn console_layout() !void {
 
                         var timestamp_text = dvui.textLayout(@src(), .{}, .{
                             .font_style = .body,
-                            .color_text = .fromColor(azem.colors.overlay1),
+                            .color_text = azem.colors.overlay1,
                             .min_size_content = .{ .w = 50 },
                             .background = false,
                         });
@@ -321,7 +321,7 @@ pub fn console_layout() !void {
 
                 var content_text = dvui.textLayout(@src(), .{}, .{
                     .font_style = .body,
-                    .color_text = .fromColor(msg.level.getColor()),
+                    .color_text = msg.level.getColor(),
                     .expand = .horizontal,
                     .background = false,
                 });
@@ -352,9 +352,9 @@ pub fn console_layout() !void {
                 if (dvui.button(@src(), auto_scroll_label, .{}, .{
                     .min_size_content = .{ .w = 50, .h = 16 },
                     .color_fill = if (console.auto_scroll)
-                        .fromColor(azem.colors.green.opacity(0.3))
+                        azem.colors.green.opacity(0.3)
                     else
-                        .fromColor(azem.colors.surface1),
+                        azem.colors.surface1,
                 })) {
                     console.auto_scroll = !console.auto_scroll;
                     console.addMessage(.info, "auto-scroll {s}", .{if (console.auto_scroll) "enabled" else "disabled"}) catch {};
@@ -362,7 +362,7 @@ pub fn console_layout() !void {
 
                 if (dvui.button(@src(), "clear", .{}, .{
                     .min_size_content = .{ .w = 50, .h = 16 },
-                    .color_fill = .fromColor(azem.colors.red.opacity(0.2)),
+                    .color_fill = azem.colors.red.opacity(0.2),
                 })) {
                     console.clear();
                     console.addMessage(.success, "console cleared", .{}) catch {};
@@ -371,7 +371,7 @@ pub fn console_layout() !void {
                     if (dvui.button(@src(), "show maze", .{}, .{
                         .expand = .horizontal,
                         .min_size_content = .{ .h = 16 },
-                        .color_fill = .fromColor(azem.colors.peach.opacity(0.3)),
+                        .color_fill = azem.colors.peach.opacity(0.3),
                         .corner_radius = .all(4),
                         .font_style = .caption,
                     })) {
@@ -384,7 +384,7 @@ pub fn console_layout() !void {
                     if (dvui.button(@src(), "show sidebar", .{}, .{
                         .expand = .horizontal,
                         .min_size_content = .{ .h = 16 },
-                        .color_fill = .fromColor(azem.colors.blue.opacity(0.3)),
+                        .color_fill = azem.colors.blue.opacity(0.3),
                         .corner_radius = .all(4),
                         .font_style = .caption,
                     })) {
@@ -397,7 +397,7 @@ pub fn console_layout() !void {
     }
 
     if (console.scroll_to_bottom_after) {
-        console.scroll_info.scrollToOffset(.vertical, std.math.maxInt(usize));
+        console.scroll_info.scrollToOffset(.vertical, std.math.floatMax(f32));
         console.scroll_to_bottom_after = false;
     }
 }
@@ -406,11 +406,11 @@ pub fn sidebar_layout() !void {
     const vbox = dvui.box(@src(), .{ .dir = .vertical }, .{
         .expand = .both,
         .background = true,
-        .color_fill = .fromColor(azem.thm.color_fill_panel),
+        .color_fill = azem.thm.color_fill_panel,
         .padding = azem.thm.size_padding_panel,
         .corner_radius = azem.thm.size_corner_radius_panel,
         .border = azem.thm.size_border_panel,
-        .color_border = .fromColor(azem.colors.blue.opacity(0.2)),
+        .color_border = azem.colors.blue.opacity(0.2),
     });
     defer vbox.deinit();
 
@@ -420,7 +420,7 @@ pub fn sidebar_layout() !void {
     var tl = dvui.textLayout(@src(), .{}, .{
         .font_style = .title_2,
         .background = false,
-        .color_text = .fromColor(azem.colors.blue),
+        .color_text = azem.colors.blue,
         .gravity_x = 0.5,
     });
     tl.format("controls", .{}, .{});
@@ -430,7 +430,7 @@ pub fn sidebar_layout() !void {
     tl2.format("select maze:", .{}, .{});
     tl2.deinit();
 
-    const global_maze_id: dvui.WidgetId = @enumFromInt(@as(u64, @bitCast([8]u8{ 'm', 'a', 'z', 'e', '_', 'i', 'd', 0 })));
+    const global_maze_id: dvui.Id = @enumFromInt(@as(u64, @bitCast([8]u8{ 'm', 'a', 'z', 'e', '_', 'i', 'd', 0 })));
     const selected_maze = dvui.dataGetPtrDefault(null, global_maze_id, "selected_maze", usize, 0);
     const previous_selection = dvui.dataGetPtrDefault(null, global_maze_id, "prev_selection", usize, std.math.maxInt(usize));
 
@@ -488,7 +488,7 @@ pub fn sidebar_layout() !void {
             if (dvui.button(@src(), "show maze/console", .{}, .{
                 .expand = .horizontal,
                 .min_size_content = .{ .h = 16 },
-                .color_fill = .fromColor(azem.colors.peach.opacity(0.3)),
+                .color_fill = azem.colors.peach.opacity(0.3),
                 .corner_radius = .all(4),
                 .font_style = .caption,
             })) {
@@ -556,6 +556,7 @@ const ConsoleMessage = struct {
 
 const ConsoleState = struct {
     messages: std.ArrayList(ConsoleMessage),
+    allocator: std.mem.Allocator,
     scroll_info: dvui.ScrollInfo = .{},
     auto_scroll: bool = true,
     max_messages: usize = 1000,
@@ -572,16 +573,17 @@ const ConsoleState = struct {
             @as(u64, @intCast(@max(0, std.time.milliTimestamp())));
 
         return Self{
-            .messages = std.ArrayList(ConsoleMessage).init(allocator),
+            .messages = .{},
+            .allocator = allocator,
             .app_start_time = start_time,
         };
     }
 
     pub fn deinit(self: *Self) void {
         for (self.messages.items) |msg| {
-            self.messages.allocator.free(msg.text);
+            self.allocator.free(msg.text);
         }
-        self.messages.deinit();
+        self.messages.deinit(self.allocator);
     }
 
     fn getTimestamp(self: *Self) u64 {
@@ -610,7 +612,7 @@ const ConsoleState = struct {
 
     pub fn addMessage(self: *Self, level: ConsoleMessage.MessageLevel, comptime fmt: []const u8, args: anytype) !void {
         const timestamp = self.getTimestamp();
-        const message_text = try std.fmt.allocPrint(self.messages.allocator, fmt, args);
+        const message_text = try std.fmt.allocPrint(self.allocator, fmt, args);
 
         const msg = ConsoleMessage{
             .text = message_text,
@@ -618,11 +620,11 @@ const ConsoleState = struct {
             .level = level,
         };
 
-        try self.messages.append(msg);
+        try self.messages.append(self.allocator, msg);
 
         if (self.messages.items.len > self.max_messages) {
             const old_msg = self.messages.orderedRemove(0);
-            self.messages.allocator.free(old_msg.text);
+            self.allocator.free(old_msg.text);
         }
 
         if (self.auto_scroll) {
@@ -632,7 +634,7 @@ const ConsoleState = struct {
 
     pub fn clear(self: *Self) void {
         for (self.messages.items) |msg| {
-            self.messages.allocator.free(msg.text);
+            self.allocator.free(msg.text);
         }
         self.messages.clearRetainingCapacity();
     }

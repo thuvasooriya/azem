@@ -66,11 +66,13 @@ pub fn build(b: *std.Build) !void {
 
         const web_app = b.addExecutable(.{
             .name = "azem",
-            .root_source_file = root_source_file,
-            .target = web_target,
-            .optimize = optimize,
-            .link_libc = false,
-            .strip = if (optimize == .ReleaseFast or optimize == .ReleaseSmall) true else false,
+            .root_module = b.createModule(.{
+                .root_source_file = root_source_file,
+                .target = web_target,
+                .optimize = optimize,
+                .link_libc = false,
+                .strip = if (optimize == .ReleaseFast or optimize == .ReleaseSmall) true else false,
+            }),
         });
 
         web_app.entry = .disabled;
@@ -87,9 +89,11 @@ pub fn build(b: *std.Build) !void {
 
         const server_exe = b.addExecutable(.{
             .name = "http-server",
-            .root_source_file = b.path("tools/http_server.zig"),
-            .target = target,
-            .optimize = optimize,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("tools/http_server.zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
         });
 
         const install_server = b.addInstallArtifact(server_exe, artifact_opts);
@@ -106,9 +110,11 @@ pub fn build(b: *std.Build) !void {
 
         const launcher_exe = b.addExecutable(.{
             .name = "web-launcher",
-            .root_source_file = b.path("tools/web_launcher.zig"),
-            .target = target,
-            .optimize = optimize,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("tools/web_launcher.zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
         });
 
         const install_launcher = b.addInstallArtifact(launcher_exe, artifact_opts);
@@ -139,11 +145,13 @@ pub fn build(b: *std.Build) !void {
 
         const publish_app = b.addExecutable(.{
             .name = "azem",
-            .root_source_file = root_source_file,
-            .target = web_target,
-            .optimize = .ReleaseSmall,
-            .link_libc = false,
-            .strip = true,
+            .root_module = b.createModule(.{
+                .root_source_file = root_source_file,
+                .target = web_target,
+                .optimize = .ReleaseSmall,
+                .link_libc = false,
+                .strip = true,
+            }),
         });
 
         publish_app.entry = .disabled;
