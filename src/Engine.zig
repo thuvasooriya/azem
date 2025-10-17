@@ -45,7 +45,7 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
         .expand = .both,
         .rect = .cast(dvui.windowRect()),
         .background = true,
-        .color_fill = azem.thm.color_background,
+        .color_fill = azem.new_thm.dvui_theme.fill,
     });
     scaler.deinit();
 
@@ -79,17 +79,13 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
         dvui.refresh(null, @src(), solver_refresh_id);
     }
 
-    var sidebar_paned = dvui.paned(@src(), .{
-        .direction = .horizontal,
-        .split_ratio = &pane_state_ptr.sidebar_split,
-        .collapsed_size = 500,
-        .handle_size = azem.thm.size_handle,
-        .handle_margin = azem.thm.size_margin_symmetric_handle,
-        .handle_dynamic = .{ .handle_size_max = azem.thm.size_handle, .distance_max = 200 },
-        .uncollapse_ratio = azem.thm.ratio_sidebar,
-    }, .{
+    const opts = azem.theme.options;
+    var sidebar_paned_opts = opts.panedOptions(.horizontal, &pane_state_ptr.sidebar_split, true);
+    sidebar_paned_opts.uncollapse_ratio = azem.new_thm.layout.ratio_sidebar;
+
+    var sidebar_paned = dvui.paned(@src(), sidebar_paned_opts, .{
         .expand = .both,
-        .margin = azem.thm.size_margin_azem,
+        .margin = azem.new_thm.layout.margin_window,
     });
     defer sidebar_paned.deinit();
 
@@ -106,19 +102,14 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
     }
 
     if (dvui.firstFrame(sidebar_paned.wd.id)) {
-        sidebar_paned.split_ratio.* = azem.thm.ratio_sidebar;
+        sidebar_paned.split_ratio.* = azem.new_thm.layout.ratio_sidebar;
     }
 
     if (sidebar_paned.showFirst()) {
-        var console_paned = dvui.paned(@src(), .{
-            .direction = .vertical,
-            .split_ratio = &pane_state_ptr.console_split,
-            .collapsed_size = 500,
-            .handle_size = azem.thm.size_handle,
-            .handle_dynamic = .{ .handle_size_max = azem.thm.size_handle, .distance_max = 200 },
-            .handle_margin = azem.thm.size_margin_symmetric_handle,
-            .uncollapse_ratio = azem.thm.ratio_console,
-        }, .{ .expand = .both });
+        var console_paned_opts = opts.panedOptions(.vertical, &pane_state_ptr.console_split, true);
+        console_paned_opts.uncollapse_ratio = azem.new_thm.layout.ratio_console;
+
+        var console_paned = dvui.paned(@src(), console_paned_opts, .{ .expand = .both });
         defer console_paned.deinit();
 
         if (pane_state_ptr.switch_to_console) {
@@ -131,7 +122,7 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
             console_paned.animateSplit(1);
         }
 
-        if (dvui.firstFrame(console_paned.wd.id)) console_paned.split_ratio.* = azem.thm.ratio_console;
+        if (dvui.firstFrame(console_paned.wd.id)) console_paned.split_ratio.* = azem.new_thm.layout.ratio_console;
 
         if (console_paned.showFirst()) try maze_layout();
         if (console_paned.showSecond()) try console_layout();
@@ -142,15 +133,13 @@ pub fn tick(eng: *Engine) !dvui.App.Result {
 }
 
 pub fn maze_layout() !void {
-    const vbox = dvui.box(@src(), .{ .dir = .vertical }, .{
-        .expand = .ratio,
-        .background = true,
-        .padding = azem.thm.size_padding_panel,
-        .color_fill = azem.thm.color_fill_panel,
-        .corner_radius = azem.thm.size_corner_radius_panel,
-        .border = azem.thm.size_border_panel,
-        .color_border = azem.colors.peach.opacity(0.2),
-    });
+    const opts = azem.theme.options;
+    const colors = azem.new_thm.colors;
+
+    var panel_opts = opts.panel(colors.maze_accent);
+    panel_opts.expand = .ratio;
+
+    const vbox = dvui.box(@src(), .{ .dir = .vertical }, panel_opts);
     defer vbox.deinit();
 
     var maze_box = dvui.box(@src(), .{}, .{ .expand = .both });
@@ -234,9 +223,9 @@ pub fn maze_layout() !void {
     defer goal_builder.deinit();
     goal_builder.addArc(.{ .x = goal_cell_x, .y = goal_cell_y }, marker_radius, 0, std.math.pi * 2.0, true);
     const goal_circle = goal_builder.build();
-    goal_circle.fillConvex(.{ .color = azem.colors.red });
+    goal_circle.fillConvex(.{ .color = colors.maze_goal });
 
-    const wall_color = azem.thm.color_maze_walls;
+    const wall_color = colors.maze_walls;
     const wall_thickness: f32 = @max(2.0, cell_size * 0.08);
 
     for (current_maze.cells, 0..) |row, row_idx| {
@@ -313,15 +302,7 @@ pub fn maze_layout() !void {
     }
 
     if (pane_state_ptr.isSidebarCollapsed()) {
-        var info_layout = dvui.textLayout(@src(), .{}, .{
-            .font_style = .title_4,
-            .gravity_x = 0.5,
-            .background = true,
-            .color_fill = azem.thm.color_fill_window.opacity(0.7),
-            .color_text = azem.colors.peach,
-            .padding = .{ .x = 8, .y = 4, .w = 8, .h = 4 },
-            .corner_radius = .{ .x = 4, .y = 4, .w = 4, .h = 4 },
-        });
+        var info_layout = dvui.textLayout(@src(), .{}, opts.infoOverlay(colors.maze_accent));
         info_layout.format("{s}", .{current_maze.name}, .{});
         info_layout.deinit();
     }
@@ -346,26 +327,14 @@ pub fn maze_layout() !void {
             defer controls_box.deinit();
 
             if (pane_state_ptr.isSidebarCollapsed()) {
-                if (dvui.button(@src(), "show sidebar", .{}, .{
-                    .expand = .horizontal,
-                    .min_size_content = .{ .h = 16 },
-                    .color_fill = azem.colors.blue.opacity(0.3),
-                    .corner_radius = .all(4),
-                    .font_style = .caption,
-                })) {
+                if (dvui.button(@src(), "show sidebar", .{}, opts.accentButton(colors.sidebar_accent))) {
                     pane_state_ptr.switchToSidebar();
                     console.addMessage(.info, "switched to sidebar", .{}) catch {};
                 }
             }
 
             if (pane_state_ptr.isConsoleCollapsed()) {
-                if (dvui.button(@src(), "show console", .{}, .{
-                    .expand = .horizontal,
-                    .min_size_content = .{ .h = 16 },
-                    .color_fill = azem.colors.green.opacity(0.3),
-                    .corner_radius = .all(4),
-                    .font_style = .caption,
-                })) {
+                if (dvui.button(@src(), "show console", .{}, opts.accentButton(colors.console_accent))) {
                     pane_state_ptr.switchToConsole();
                     console.addMessage(.info, "switched to console", .{}) catch {};
                 }
@@ -375,15 +344,10 @@ pub fn maze_layout() !void {
 }
 
 pub fn console_layout() !void {
-    const vbox = dvui.box(@src(), .{ .dir = .vertical }, .{
-        .expand = .both,
-        .background = true,
-        .padding = azem.thm.size_padding_panel,
-        .color_fill = azem.thm.color_fill_panel,
-        .corner_radius = azem.thm.size_corner_radius_panel,
-        .border = azem.thm.size_border_panel,
-        .color_border = azem.colors.green.opacity(0.2),
-    });
+    const opts = azem.theme.options;
+    const colors = azem.new_thm.colors;
+
+    const vbox = dvui.box(@src(), .{ .dir = .vertical }, opts.panel(colors.console_accent));
     defer vbox.deinit();
 
     const console = getConsoleState(std.heap.page_allocator);
@@ -400,28 +364,13 @@ pub fn console_layout() !void {
         defer scroll_area.deinit();
 
         if (console.messages.items.len == 0) {
-            var empty_text = dvui.textLayout(@src(), .{}, .{
-                .font_style = .body,
-                .color_text = azem.colors.overlay0,
-                .gravity_x = 0.5,
-                .gravity_y = 0.5,
-                .expand = .both,
-            });
+            const empty_color = dvui.themeGet().text.lighten(if (dvui.themeGet().dark) -30 else 30);
+            var empty_text = dvui.textLayout(@src(), .{}, opts.emptyStateText(empty_color));
             empty_text.format("no messages yet...\ntry selecting a maze or clicking a button!", .{}, .{});
             empty_text.deinit();
         } else {
             for (console.messages.items, 0..) |msg, i| {
-                var msg_box = dvui.box(@src(), .{ .dir = .horizontal }, .{
-                    .id_extra = i,
-                    .expand = .horizontal,
-                    .background = (i % 2 == 0),
-                    .color_fill = if (i % 2 == 0)
-                        azem.colors.surface0.opacity(0.4)
-                    else
-                        undefined,
-                    .corner_radius = .all(4),
-                    // .padding = .{ .x = 6, .y = 3, .w = 6, .h = 3 },
-                });
+                var msg_box = dvui.box(@src(), .{ .dir = .horizontal }, opts.consoleMessage(i));
                 defer msg_box.deinit();
 
                 switch (dvui.backend.kind) {
@@ -432,7 +381,7 @@ pub fn console_layout() !void {
 
                         var timestamp_text = dvui.textLayout(@src(), .{}, .{
                             .font_style = .body,
-                            .color_text = azem.colors.overlay1,
+                            .color_text = dvui.themeGet().text.lighten(if (dvui.themeGet().dark) -20 else 20),
                             .min_size_content = .{ .w = 50 },
                             .background = false,
                         });
@@ -480,45 +429,28 @@ pub fn console_layout() !void {
                 defer vbox2.deinit();
 
                 const auto_scroll_label = if (console.auto_scroll) "auto" else "manual";
-                if (dvui.button(@src(), auto_scroll_label, .{}, .{
-                    .min_size_content = .{ .w = 50, .h = 16 },
-                    .color_fill = if (console.auto_scroll)
-                        azem.colors.green.opacity(0.3)
-                    else
-                        azem.colors.surface1,
-                })) {
+                if (dvui.button(@src(), auto_scroll_label, .{}, opts.smallButton(if (console.auto_scroll)
+                    colors.console_success.opacity(0.3)
+                else
+                    dvui.themeGet().control.fill.?)))
+                {
                     console.auto_scroll = !console.auto_scroll;
                     console.addMessage(.info, "auto-scroll {s}", .{if (console.auto_scroll) "enabled" else "disabled"}) catch {};
                 }
 
-                if (dvui.button(@src(), "clear", .{}, .{
-                    .min_size_content = .{ .w = 50, .h = 16 },
-                    .color_fill = azem.colors.red.opacity(0.2),
-                })) {
+                if (dvui.button(@src(), "clear", .{}, opts.smallButton(colors.console_error.opacity(0.2)))) {
                     console.clear();
                     console.addMessage(.success, "console cleared", .{}) catch {};
                 }
                 if (pane_state_ptr.isMazeCollapsed()) {
-                    if (dvui.button(@src(), "show maze", .{}, .{
-                        .expand = .horizontal,
-                        .min_size_content = .{ .h = 16 },
-                        .color_fill = azem.colors.peach.opacity(0.3),
-                        .corner_radius = .all(4),
-                        .font_style = .caption,
-                    })) {
+                    if (dvui.button(@src(), "show maze", .{}, opts.accentButton(colors.maze_accent))) {
                         pane_state_ptr.switchToMaze();
                         console.addMessage(.info, "switched to maze", .{}) catch {};
                     }
                 }
 
                 if (pane_state_ptr.isSidebarCollapsed()) {
-                    if (dvui.button(@src(), "show sidebar", .{}, .{
-                        .expand = .horizontal,
-                        .min_size_content = .{ .h = 16 },
-                        .color_fill = azem.colors.blue.opacity(0.3),
-                        .corner_radius = .all(4),
-                        .font_style = .caption,
-                    })) {
+                    if (dvui.button(@src(), "show sidebar", .{}, opts.accentButton(colors.sidebar_accent))) {
                         pane_state_ptr.switchToSidebar();
                         console.addMessage(.info, "switched to sidebar", .{}) catch {};
                     }
@@ -534,30 +466,20 @@ pub fn console_layout() !void {
 }
 
 pub fn sidebar_layout() !void {
-    const vbox = dvui.box(@src(), .{ .dir = .vertical }, .{
-        .expand = .both,
-        .background = true,
-        .color_fill = azem.thm.color_fill_panel,
-        .padding = azem.thm.size_padding_panel,
-        .corner_radius = azem.thm.size_corner_radius_panel,
-        .border = azem.thm.size_border_panel,
-        .color_border = azem.colors.blue.opacity(0.2),
-    });
+    const opts = azem.theme.options;
+    const colors = azem.new_thm.colors;
+
+    const vbox = dvui.box(@src(), .{ .dir = .vertical }, opts.panel(colors.sidebar_accent));
     defer vbox.deinit();
 
     const console = getConsoleState(std.heap.page_allocator);
     const pane_state_ptr = getPaneState(std.heap.page_allocator);
 
-    var tl = dvui.textLayout(@src(), .{}, .{
-        .font_style = .title_2,
-        .background = false,
-        .color_text = azem.colors.blue,
-        .gravity_x = 0.5,
-    });
+    var tl = dvui.textLayout(@src(), .{}, opts.sectionTitle(colors.sidebar_accent));
     tl.format("controls", .{}, .{});
     tl.deinit();
 
-    var tl2 = dvui.textLayout(@src(), .{}, .{ .font_style = .title_4 });
+    var tl2 = dvui.textLayout(@src(), .{}, opts.subsectionTitle());
     tl2.format("select maze:", .{}, .{});
     tl2.deinit();
 
@@ -583,7 +505,7 @@ pub fn sidebar_layout() !void {
 
     _ = dvui.spacer(@src(), .{ .expand = .vertical });
 
-    var tl3 = dvui.textLayout(@src(), .{}, .{ .font_style = .title_4 });
+    var tl3 = dvui.textLayout(@src(), .{}, opts.subsectionTitle());
     tl3.format("solver algorithm:", .{}, .{});
     tl3.deinit();
 
@@ -600,7 +522,7 @@ pub fn sidebar_layout() !void {
 
     _ = dvui.spacer(@src(), .{ .min_size_content = .{ .h = 10 } });
 
-    var tl4 = dvui.textLayout(@src(), .{}, .{ .font_style = .title_4 });
+    var tl4 = dvui.textLayout(@src(), .{}, opts.subsectionTitle());
     tl4.format("positions:", .{}, .{});
     tl4.deinit();
 
@@ -609,10 +531,7 @@ pub fn sidebar_layout() !void {
         defer hbox_positions.deinit();
 
         const start_mode_active = solver_state_ptr.edit_mode == .setting_start;
-        if (dvui.button(@src(), "set start", .{}, .{
-            .expand = .horizontal,
-            .color_fill = if (start_mode_active) azem.colors.green.opacity(0.4) else azem.colors.surface1,
-        })) {
+        if (dvui.button(@src(), "set start", .{}, opts.toggleButton(colors.maze_start, start_mode_active))) {
             solver_state_ptr.edit_mode = if (start_mode_active) .none else .setting_start;
             if (solver_state_ptr.edit_mode == .setting_start) {
                 console.addMessage(.info, "click grid to set start position", .{}) catch {};
@@ -622,10 +541,7 @@ pub fn sidebar_layout() !void {
         }
 
         const goal_mode_active = solver_state_ptr.edit_mode == .setting_goal;
-        if (dvui.button(@src(), "set goal", .{}, .{
-            .expand = .horizontal,
-            .color_fill = if (goal_mode_active) azem.colors.red.opacity(0.4) else azem.colors.surface1,
-        })) {
+        if (dvui.button(@src(), "set goal", .{}, opts.toggleButton(colors.maze_goal, goal_mode_active))) {
             solver_state_ptr.edit_mode = if (goal_mode_active) .none else .setting_goal;
             if (solver_state_ptr.edit_mode == .setting_goal) {
                 console.addMessage(.info, "click grid to set goal position", .{}) catch {};
@@ -701,15 +617,11 @@ pub fn sidebar_layout() !void {
             });
             defer controls_box.deinit();
 
-            if (dvui.button(@src(), "show maze/console", .{}, .{
-                .expand = .horizontal,
-                .min_size_content = .{ .h = 16 },
-                .color_fill = azem.colors.peach.opacity(0.3),
-                .corner_radius = .all(4),
-                .font_style = .caption,
-            })) {
-                pane_state_ptr.switchToMaze();
-                console.addMessage(.info, "switched to maze/console", .{}) catch {};
+            if (pane_state_ptr.isSidebarOnly()) {
+                if (dvui.button(@src(), "show maze/console", .{}, opts.accentButton(colors.maze_accent))) {
+                    pane_state_ptr.switchToMaze();
+                    console.addMessage(.info, "switched to maze/console", .{}) catch {};
+                }
             }
         }
     }

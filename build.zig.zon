@@ -2,12 +2,12 @@
     .name = .azem,
     .version = "0.0.15",
     .fingerprint = 0xd03120fbf74d1c71,
-    .minimum_zig_version = "0.15.1",
+    .minimum_zig_version = "0.15.2",
     .dependencies = .{
         .dvui = .{
             // .path = "deps/dvui",
-            .url = "https://github.com/david-vanderson/dvui/archive/d2e9aef57ff8bc9400e824f9443206316f05e86d.tar.gz",
-            .hash = "dvui-0.4.0-dev-AQFJmfcC1AA06rULetHjwRnTJGZEOMe6b__BZRT9OGBm",
+            .url = "https://github.com/david-vanderson/dvui/archive/7cdcf937f41490b70e96f4abe80d8e61a858ec96.tar.gz",
+            .hash = "dvui-0.4.0-dev-AQFJmUCT1QAYkkYKaevIYepio5OH9VNUa4_8Cpp1qPkV",
         },
         .mach_objc = .{
             .url = "git+https://github.com/foxnne/mach-objc#10d375670486f4c2c2c47b6b8bef9bcf42b52160",
@@ -16,10 +16,10 @@
         },
     },
     .paths = .{
-        "assets",
         "src",
         "docs",
         "tools",
+        "public",
         "build.zig",
         "build.zig.zon",
         "readme.md",

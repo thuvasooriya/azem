@@ -14,6 +14,7 @@ pub const Maze = @import("Maze.zig");
 pub const App = @import("App.zig");
 pub const Theme = @import("Theme.zig");
 pub const Color = @import("Color.zig");
+pub const theme = @import("theme/theme.zig");
 
 // helpers
 pub const colors = Color.Palettes.CatppuccinMocha;
@@ -22,6 +23,7 @@ pub const colors = Color.Palettes.CatppuccinMocha;
 pub var eng: *Engine = undefined;
 pub var app: *App = undefined;
 pub var thm: *Theme = undefined;
+pub var new_thm: *const theme.Theme = undefined;
 
 pub const dvui_app: dvui.App = .{ .config = .{ .options = .{
     .size = .{ .w = 800.0, .h = 800.0 },

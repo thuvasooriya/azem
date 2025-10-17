@@ -47,6 +47,16 @@ pub fn init(win: *dvui.Window) !void {
     azem.thm = try allocator.create(Theme);
     azem.thm.* = Theme.init(azem.app) catch unreachable;
     Theme.set(azem.app, azem.thm);
+
+    // initialize new theme system
+    std.log.info("initializing new theme system", .{});
+    const jbm_ttf = @embedFile("fonts/JetBrainsMono-VariableFont_wght.ttf");
+    const jbm_italic_ttf = @embedFile("fonts/JetBrainsMono-Italic-VariableFont_wght.ttf");
+    dvui.addFont("JetBrainsMono-VariableFont_wght", jbm_ttf, null) catch {};
+    dvui.addFont("JetBrainsMono-Italic-VariableFont_wght", jbm_italic_ttf, null) catch {};
+
+    azem.new_thm = &azem.theme.presets.catppuccin_mocha;
+    azem.new_thm.apply();
 }
 
 pub fn deinit() void {
